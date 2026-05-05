@@ -1460,7 +1460,7 @@
         .trim()
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[̀-ͯ]/g, "");
 
       if (["available", "free", "livre", "disponivel"].includes(raw)) {
         return "available";
@@ -2173,7 +2173,7 @@
       const type = operationLabel(item.type);
       const equipment = item.equipment_name || item.equipment_id || "Equipamento";
       const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
-      const photoCount = item.photo_count || countOperationPhotos(item.photos);
+      const photoCount = countOperationPhotos(item);
       const photoText = photoCount === 1 ? "1 foto" : `${photoCount} fotos`;
 
       return `
@@ -2195,8 +2195,14 @@
       const item = state.historyItems[index];
       if (!item) return;
 
-      const photos = extractOperationPhotos(item.photos);
+      const photos = extractOperationPhotos(item);
       const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
+      const declaredPhotoCount = Number(item.photo_count || 0);
+      const diagnosticMessage = declaredPhotoCount > 0 && photos.length === 0
+        ? `<div class="notice error" style="margin-top:18px;">
+             Esta operação informa ${declaredPhotoCount} foto(s), mas o código não encontrou os dados da imagem dentro do registro. Verifique no Realtime Database se as fotos estão em <strong>photos/photo_01</strong>, <strong>photos/photo_01/url</strong> ou em outro campo.
+           </div>`
+        : "";
 
       document.getElementById("historyDetailContent").innerHTML = `
         <div class="detail-list">
@@ -2205,8 +2211,11 @@
           ${detailRow("Funcionário", item.employee_name || item.employee_id || "-")}
           ${detailRow("Equipamento", item.equipment_name || item.equipment_id || "-")}
           ${detailRow("Operação", operationLabel(item.type))}
+          ${detailRow("Fotos", `${photos.length} encontrada(s)`)}
           ${detailRow("GPS", item.gps && item.gps.captured ? "Sim" : "Não")}
         </div>
+
+        ${diagnosticMessage}
 
         <div class="photo-gallery-title">Fotos anexadas</div>
         ${photos.length ? renderHistoryPhotos(photos) : `<div class="empty-photos">Nenhuma foto encontrada nesta operação.</div>`}
@@ -2229,54 +2238,108 @@
         <div class="photo-gallery">
           ${photos.map((photo, index) => `
             <div class="history-photo">
-              <img src="${escapeHtml(photo.url)}" alt="Foto ${index + 1} da operação">
-              <div class="history-photo-caption">Foto ${index + 1}${photo.storage_path ? ` — ${escapeHtml(photo.storage_path)}` : ""}</div>
+              <img src="${escapeHtml(photo.url)}" alt="Foto ${index + 1} da operação" onerror="this.style.display='none'; this.parentElement.querySelector('.history-photo-caption').innerHTML='Erro ao carregar esta imagem.';">
+              <div class="history-photo-caption">
+                Foto ${index + 1} — ${escapeHtml(photo.source)}${photo.storage_path ? `<br>${escapeHtml(photo.storage_path)}` : ""}
+              </div>
             </div>
           `).join("")}
         </div>
       `;
     }
 
-    // Conta fotos em operação nova ou antiga.
-    function countOperationPhotos(photos) {
-      return extractOperationPhotos(photos).length;
+    // Conta fotos procurando em todos os formatos aceitos.
+    function countOperationPhotos(operation) {
+      return extractOperationPhotos(operation).length;
     }
 
     /*
-      Extrai fotos do histórico aceitando dois formatos:
-      1. Novo/correto: photo_01: { url, storage_path }
-      2. Antigo/Base64: photo_01: "data:image/jpeg;base64,..."
+      Extrai fotos do histórico aceitando vários formatos possíveis:
+
+      Formato correto novo:
+      photos: {
+        photo_01: { url: "https://firebasestorage.googleapis.com/...", storage_path: "operations/.../photo_01.jpg" }
+      }
+
+      Formato antigo em Base64:
+      photos: {
+        photo_01: "data:image/jpeg;base64,..."
+      }
+
+      Formato alternativo também aceito:
+      photo_01: "data:image/jpeg;base64,..."
+      photo_01_url: "https://..."
+      photo_urls: ["https://..."]
     */
-    function extractOperationPhotos(photos) {
-      if (!photos) return [];
+    function extractOperationPhotos(operation) {
+      if (!operation) return [];
 
-      return Object.keys(photos)
-        .sort()
-        .map(key => {
-          const item = photos[key];
+      const found = [];
+      const addPhoto = (value, source, storagePath = "") => {
+        if (!value) return;
 
-          if (!item) return null;
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed.startsWith("data:image/") || trimmed.startsWith("http")) {
+            found.push({ url: trimmed, source, storage_path: storagePath });
+          }
+          return;
+        }
 
-          if (typeof item === "string") {
-            if (item.startsWith("data:image/")) {
-              return { url: item, storage_path: "Base64 salvo no Realtime Database" };
-            }
-            if (item.startsWith("http")) {
-              return { url: item, storage_path: "" };
-            }
-            return null;
+        if (typeof value === "object") {
+          const possibleUrl = value.url || value.downloadURL || value.download_url || value.href || value.src || "";
+          const possiblePath = value.storage_path || value.storagePath || value.path || storagePath || "";
+
+          if (possibleUrl) {
+            addPhoto(possibleUrl, source, possiblePath);
+            return;
           }
 
-          if (typeof item === "object" && item.url) {
-            return {
-              url: item.url,
-              storage_path: item.storage_path || ""
-            };
-          }
+          // Caso raro: algum campo interno do objeto contém diretamente a imagem.
+          Object.keys(value).forEach(childKey => {
+            const childValue = value[childKey];
+            if (typeof childValue === "string" && (childValue.startsWith("data:image/") || childValue.startsWith("http"))) {
+              addPhoto(childValue, `${source}/${childKey}`, possiblePath);
+            }
+          });
+        }
+      };
 
-          return null;
-        })
-        .filter(Boolean);
+      // 1) Procura no campo principal photos.
+      if (operation.photos && typeof operation.photos === "object") {
+        Object.keys(operation.photos).sort().forEach(key => {
+          addPhoto(operation.photos[key], `photos/${key}`);
+        });
+      }
+
+      // 2) Procura em campos diretos antigos ou alternativos.
+      ["photo_01", "photo_02", "photo_03", "photo1", "photo2", "photo3"].forEach(key => {
+        addPhoto(operation[key], key);
+      });
+
+      ["photo_01_url", "photo_02_url", "photo_03_url", "photo1_url", "photo2_url", "photo3_url"].forEach(key => {
+        addPhoto(operation[key], key);
+      });
+
+      // 3) Procura arrays de URLs.
+      ["photo_urls", "photoUrls", "images", "image_urls", "imageUrls"].forEach(key => {
+        const list = operation[key];
+        if (Array.isArray(list)) {
+          list.forEach((value, index) => addPhoto(value, `${key}[${index}]`));
+        }
+      });
+
+      // Remove duplicatas pelo URL/Base64.
+      const unique = [];
+      const seen = new Set();
+      found.forEach(photo => {
+        if (!seen.has(photo.url)) {
+          seen.add(photo.url);
+          unique.push(photo);
+        }
+      });
+
+      return unique;
     }
 
     // Extrai data/hora a partir do ID LOG_YYYYMMDD_HHMMSS.
@@ -2288,6 +2351,7 @@
   </script>
 </body>
 </html>
+
 
 
 
