@@ -6,15 +6,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Teste QR Code + Firebase</title>
+  <title>Check-in / Check-out de Equipamentos</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    :root {      --blue: #2563eb;
+    :root {
+      --blue: #2563eb;
       --blue-dark: #1d4ed8;
       --green: #16a34a;
       --red: #dc2626;
+      --orange: #f97316;
       --gray: #64748b;
       --light: #f1f5f9;
       --card: #ffffff;
@@ -24,45 +26,112 @@
       --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      padding: 20px;
+      padding: 18px;
       font-family: Arial, Helvetica, sans-serif;
-      background: var(--light);
+      background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 45%, #ffffff 100%);
       color: var(--text);
+      min-height: 100vh;
     }
 
     .app {
       width: 100%;
-      max-width: 430px;
+      max-width: 440px;
       margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: 22px;
       padding: 20px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       box-shadow: var(--shadow);
     }
 
-    h1 {
-      font-size: 23px;
-      margin: 0 0 8px;
+    .screen {
+      display: none;
+      animation: fade 0.18s ease-in-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
       line-height: 1.15;
     }
 
+    h1 {
+      font-size: 25px;
+      margin-bottom: 10px;
+    }
+
     h2 {
-      font-size: 19px;
-      margin: 0 0 12px;
+      font-size: 21px;
+      margin-bottom: 10px;
     }
 
     h3 {
       font-size: 18px;
-      margin: 0 0 12px;
+      margin-bottom: 10px;
     }
 
     p {
@@ -76,76 +145,110 @@
       color: var(--muted);
     }
 
-    .manual-box {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: 0.15s;
     }
 
-    input {
+    button:active {
+      transform: scale(0.99);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary { background: var(--blue); color: white; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-orange { background: var(--orange); color: white; }
+    .btn-gray { background: #e2e8f0; color: #334155; }
+    .btn-outline { background: white; color: var(--blue); border: 1px solid #bfdbfe; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    input, textarea {
       width: 100%;
       padding: 14px;
       font-size: 16px;
       border-radius: 14px;
       border: 1px solid #cbd5e1;
       outline: none;
+      background: white;
     }
 
-    input:focus {
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
       border-color: #60a5fa;
       box-shadow: 0 0 0 3px #dbeafe;
     }
 
-    button {
-      width: 100%;
-      border: 0;
-      border-radius: 14px;
-      padding: 14px 16px;
-      font-size: 16px;
-      font-weight: 700;
-      margin-top: 10px;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: var(--blue);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--blue-dark);
-    }
-
-    .btn-gray {
-      background: #e2e8f0;
-      color: #334155;
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 12px 0 6px;
+      font-weight: 800;
     }
 
     #reader {
       width: 100%;
       overflow: hidden;
       border-radius: 16px;
+      border: 1px solid var(--border);
     }
 
     #reader video {
       border-radius: 16px;
     }
 
-    .item {
+    .manual-box {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .info-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .info-item {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 15px;
     }
 
-    .item span:first-child {
+    .info-item span:first-child {
       color: var(--muted);
+      font-size: 13px;
     }
 
-    .item span:last-child {
-      font-weight: 700;
+    .info-item span:last-child {
       text-align: right;
+      font-weight: 800;
     }
 
     .status {
@@ -153,13 +256,13 @@
       padding: 5px 11px;
       border-radius: 999px;
       color: white;
-      font-size: 14px;
+      font-size: 13px;
       text-transform: uppercase;
     }
 
     .available, .active { background: var(--green); }
     .borrowed, .inactive { background: var(--red); }
-    .maintenance { background: #f97316; }
+    .maintenance { background: var(--orange); }
 
     img {
       width: 100%;
@@ -170,12 +273,25 @@
 
     .success {
       color: var(--green);
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .error {
       color: var(--red);
-      font-weight: 700;
+      font-weight: 800;
+    }
+
+    .warning {
+      color: var(--orange);
+      font-weight: 800;
+    }
+
+    .notice {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-top: 12px;
     }
 
     .code-box {
@@ -183,7 +299,7 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px;
-      margin-top: 12px;
+      margin-top: 10px;
       font-family: Consolas, monospace;
       word-break: break-word;
     }
@@ -192,53 +308,134 @@
 
 <body>
   <div class="app">
-    <div class="card">
-      <h1>Teste QR Code + Firebase</h1>
-      <p>
-        Leia um QR Code de funcionário ou equipamento. O QR Code deve conter apenas o ID, por exemplo <strong>EMP_0001</strong> ou <strong>EQ_BIKE_001</strong>.
-      </p>
-      <p class="small">
-        No celular, prefira testar em uma página HTTPS, como GitHub Pages. A câmera pode não funcionar se o arquivo for aberto diretamente como arquivo local.
-      </p>
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">QR</div>
+        <div>
+          <div class="brand-title">Controle de Equipamentos</div>
+          <div class="brand-subtitle">Check-in / Check-out</div>
+        </div>
+      </div>
+      <div class="pill">MVP</div>
     </div>
 
-    <div class="card">
-      <h2>Leitor de QR Code</h2>
-      <div id="reader"></div>
-      <button class="btn-gray" onclick="reiniciarLeitor()">Reiniciar leitura</button>
-
-      <div class="manual-box">
-        <p class="small">Entrada manual apenas para teste:</p>
-        <input id="manualInput" type="text" placeholder="EMP_0001 ou EQ_BIKE_001" />
-        <button class="btn-primary" onclick="consultarManual()">Consultar manualmente</button>
+    <div id="screenHome" class="screen active">
+      <div class="card">
+        <h1>Iniciar operação</h1>
+        <p>Leia primeiro o QR Code do crachá do funcionário. Depois o sistema pedirá o QR Code do equipamento.</p>
+        <button class="btn-primary" onclick="iniciarLeituraFuncionario()">Ler QR do crachá</button>
+        <p class="small" style="margin-top: 12px;">O QR Code do funcionário deve conter algo como <strong>EMP_0001</strong>.</p>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Resultado</h2>
-      <div id="resultado">Aguardando leitura do QR Code...</div>
+    <div id="screenScanner" class="screen">
+      <div class="card">
+        <h2 id="scannerTitle">Leitor de QR Code</h2>
+        <p id="scannerHelp">Aponte a câmera para o QR Code.</p>
+        <div id="reader"></div>
+        <button class="btn-gray" onclick="cancelarLeitura()">Cancelar leitura</button>
+
+        <div class="manual-box">
+          <p class="small">Entrada manual apenas para teste:</p>
+          <input id="manualInput" type="text" placeholder="EMP_0001 ou EQ_BIKE_001" />
+          <button class="btn-outline" onclick="consultarManual()">Consultar manualmente</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="screenEmployee" class="screen">
+      <div class="card">
+        <h2>Funcionário identificado</h2>
+        <div id="employeeDetails"></div>
+        <div class="row">
+          <button class="btn-green" onclick="selecionarOperacao('checkout')">Retirar</button>
+          <button class="btn-orange" onclick="selecionarOperacao('checkin')">Devolver</button>
+        </div>
+        <button class="btn-gray" onclick="resetarFluxo()">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="screenEquipment" class="screen">
+      <div class="card">
+        <h2>Equipamento identificado</h2>
+        <div id="equipmentDetails"></div>
+
+        <label for="operationNotes">Observações da operação</label>
+        <textarea id="operationNotes" placeholder="Ex: retirada para uso interno, equipamento sem avarias, devolvido em bom estado..."></textarea>
+
+        <div id="operationValidation" class="notice"></div>
+        <button id="confirmOperationButton" class="btn-primary" onclick="confirmarOperacao()">Confirmar operação</button>
+        <button class="btn-gray" onclick="resetarFluxo()">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="screenResult" class="screen">
+      <div class="card">
+        <h2 id="resultTitle">Operação concluída</h2>
+        <div id="resultDetails"></div>
+        <button class="btn-primary" onclick="resetarFluxo()">Nova operação</button>
+      </div>
     </div>
   </div>
 
   <script>
     const FIREBASE_URL = "https://checking-project-b423d-default-rtdb.europe-west1.firebasedatabase.app";
 
-    // Se suas regras estão públicas para protótipo, deixe vazio.
+    // Para protótipo online com regras públicas de teste, deixe vazio.
+    // Não coloque token secreto em GitHub Pages.
     const FIREBASE_AUTH = "";
 
-    // Se o Firebase exigir token, use apenas para teste local:
-    // const FIREBASE_AUTH = "SEU_TOKEN_AQUI";
-
-    let html5QrcodeScanner = null;
+    let scanner = null;
     let leituraBloqueada = false;
+    let modoLeitura = "employee";
 
-    iniciarLeitor();
+    const estado = {
+      employee: null,
+      equipment: null,
+      operationType: null
+    };
 
-    function iniciarLeitor() {
+    function mostrarTela(id) {
+      document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function firebaseUrl(path) {
+      let url = FIREBASE_URL + path;
+      if (FIREBASE_AUTH !== "") {
+        url += (path.includes("?") ? "&" : "?") + "auth=" + encodeURIComponent(FIREBASE_AUTH);
+      }
+      return url;
+    }
+
+    function iniciarLeituraFuncionario() {
+      modoLeitura = "employee";
+      document.getElementById("scannerTitle").textContent = "Ler crachá do funcionário";
+      document.getElementById("scannerHelp").innerHTML = "Aponte a câmera para o QR Code do crachá. Exemplo esperado: <strong>EMP_0001</strong>.";
+      document.getElementById("manualInput").placeholder = "EMP_0001";
+      iniciarScanner();
+    }
+
+    function iniciarLeituraEquipamento() {
+      modoLeitura = "equipment";
+      document.getElementById("scannerTitle").textContent = "Ler QR Code do equipamento";
+      document.getElementById("scannerHelp").innerHTML = "Aponte a câmera para o QR Code do equipamento. Exemplo esperado: <strong>EQ_BIKE_001</strong>.";
+      document.getElementById("manualInput").placeholder = "EQ_BIKE_001";
+      iniciarScanner();
+    }
+
+    function iniciarScanner() {
       leituraBloqueada = false;
-      document.getElementById("resultado").innerHTML = "Aguardando leitura do QR Code...";
+      document.getElementById("manualInput").value = "";
+      mostrarTela("screenScanner");
 
-      html5QrcodeScanner = new Html5QrcodeScanner(
+      if (scanner) {
+        scanner.clear().catch(() => {});
+      }
+
+      document.getElementById("reader").innerHTML = "";
+
+      scanner = new Html5QrcodeScanner(
         "reader",
         {
           fps: 10,
@@ -249,193 +446,341 @@
         false
       );
 
-      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      scanner.render(onScanSuccess, onScanFailure);
     }
 
-    function reiniciarLeitor() {
-      leituraBloqueada = false;
-      document.getElementById("resultado").innerHTML = "Reiniciando leitor...";
+    function pararScanner() {
+      if (scanner) {
+        scanner.clear().catch(() => {});
+        scanner = null;
+      }
+      document.getElementById("reader").innerHTML = "";
+    }
 
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear()
-          .then(() => {
-            document.getElementById("reader").innerHTML = "";
-            iniciarLeitor();
-          })
-          .catch(() => {
-            document.getElementById("reader").innerHTML = "";
-            iniciarLeitor();
-          });
+    function cancelarLeitura() {
+      pararScanner();
+      if (estado.employee) {
+        mostrarTela("screenEmployee");
       } else {
-        iniciarLeitor();
+        mostrarTela("screenHome");
       }
     }
 
     function onScanSuccess(decodedText) {
       if (leituraBloqueada) return;
       leituraBloqueada = true;
-
-      const idLido = decodedText.trim();
-
-      document.getElementById("resultado").innerHTML = `
-        <p class="success">QR Code lido com sucesso.</p>
-        <div class="code-box">${escapeHtml(idLido)}</div>
-        <p>Consultando Firebase...</p>
-      `;
-
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear().catch(() => {});
-      }
-
-      consultarID(idLido);
+      pararScanner();
+      processarCodigo(decodedText.trim());
     }
 
     function onScanFailure(error) {
-      // Erros de leitura contínuos são esperados enquanto nenhum QR Code é detectado.
-      // Por isso, não mostramos esses erros na tela.
+      // Leituras falhas são normais enquanto o QR Code não é detectado.
     }
 
     function consultarManual() {
       const id = document.getElementById("manualInput").value.trim();
-      consultarID(id);
+      pararScanner();
+      processarCodigo(id);
     }
 
-    async function consultarID(id) {
-      const resultado = document.getElementById("resultado");
-
+    async function processarCodigo(id) {
       if (!id) {
-        resultado.innerHTML = "<p class='error'>Digite ou leia um ID primeiro.</p>";
+        alert("Digite ou leia um ID primeiro.");
+        if (modoLeitura === "employee") iniciarLeituraFuncionario();
+        else iniciarLeituraEquipamento();
         return;
-      }
-
-      let path = "";
-
-      if (id.startsWith("EMP_")) {
-        path = `/employees/${id}.json`;
-      } else if (id.startsWith("EQ_")) {
-        path = `/equipments/${id}.json`;
-      } else {
-        resultado.innerHTML = `
-          <p class="error">ID inválido.</p>
-          <p>O QR Code lido foi:</p>
-          <div class="code-box">${escapeHtml(id)}</div>
-          <p>Use IDs começando com <strong>EMP_</strong> ou <strong>EQ_</strong>.</p>
-        `;
-        return;
-      }
-
-      let url = FIREBASE_URL + path;
-
-      if (FIREBASE_AUTH !== "") {
-        url += `?auth=${FIREBASE_AUTH}`;
       }
 
       try {
-        const response = await fetch(url);
-        const data = await response.json();
+        if (modoLeitura === "employee") {
+          await carregarFuncionario(id);
+        } else {
+          await carregarEquipamento(id);
+        }
+      } catch (error) {
+        mostrarErro("Erro na consulta", error.message);
+      }
+    }
 
-        if (!data) {
-          resultado.innerHTML = `
-            <p class="error">ID não encontrado no banco.</p>
-            <p>ID consultado:</p>
-            <div class="code-box">${escapeHtml(id)}</div>
+    async function carregarFuncionario(id) {
+      if (!id.startsWith("EMP_")) {
+        mostrarErro("QR Code inválido", `Esperado ID de funcionário começando com EMP_. Código lido: ${id}`);
+        return;
+      }
+
+      const response = await fetch(firebaseUrl(`/employees/${encodeURIComponent(id)}.json`));
+      const employee = await response.json();
+
+      if (!employee) {
+        mostrarErro("Funcionário não encontrado", `ID consultado: ${id}`);
+        return;
+      }
+
+      if (employee.status !== "active") {
+        mostrarErro("Funcionário inativo", `O funcionário ${employee.name || id} não está ativo no sistema.`);
+        return;
+      }
+
+      estado.employee = employee;
+      document.getElementById("employeeDetails").innerHTML = gerarDetalhesFuncionario(employee);
+      mostrarTela("screenEmployee");
+    }
+
+    function selecionarOperacao(tipo) {
+      estado.operationType = tipo;
+      iniciarLeituraEquipamento();
+    }
+
+    async function carregarEquipamento(id) {
+      if (!id.startsWith("EQ_")) {
+        mostrarErro("QR Code inválido", `Esperado ID de equipamento começando com EQ_. Código lido: ${id}`);
+        return;
+      }
+
+      const response = await fetch(firebaseUrl(`/equipments/${encodeURIComponent(id)}.json`));
+      const equipment = await response.json();
+
+      if (!equipment) {
+        mostrarErro("Equipamento não encontrado", `ID consultado: ${id}`);
+        return;
+      }
+
+      estado.equipment = equipment;
+      document.getElementById("equipmentDetails").innerHTML = gerarDetalhesEquipamento(equipment);
+      validarOperacao();
+      mostrarTela("screenEquipment");
+    }
+
+    function validarOperacao() {
+      const box = document.getElementById("operationValidation");
+      const button = document.getElementById("confirmOperationButton");
+      const employee = estado.employee;
+      const equipment = estado.equipment;
+      const tipo = estado.operationType;
+
+      button.disabled = false;
+
+      if (tipo === "checkout") {
+        button.textContent = "Confirmar retirada";
+        button.className = "btn-green";
+
+        if (equipment.status !== "available") {
+          button.disabled = true;
+          box.innerHTML = `
+            <p class="error">Retirada bloqueada.</p>
+            <p>Este equipamento não está disponível. Status atual: <strong>${escapeHtml(equipment.status || "-")}</strong>.</p>
           `;
           return;
         }
 
-        if (id.startsWith("EMP_")) {
-          mostrarFuncionario(data);
-        } else {
-          mostrarEquipamento(data);
+        box.innerHTML = `
+          <p class="success">Retirada permitida.</p>
+          <p>O equipamento será vinculado ao funcionário <strong>${escapeHtml(employee.name)}</strong>.</p>
+        `;
+        return;
+      }
+
+      if (tipo === "checkin") {
+        button.textContent = "Confirmar devolução";
+        button.className = "btn-orange";
+
+        if (equipment.status !== "borrowed") {
+          button.disabled = true;
+          box.innerHTML = `
+            <p class="error">Devolução bloqueada.</p>
+            <p>Este equipamento não está marcado como emprestado. Status atual: <strong>${escapeHtml(equipment.status || "-")}</strong>.</p>
+          `;
+          return;
         }
-      } catch (error) {
-        resultado.innerHTML = `
-          <p class="error">Erro ao consultar Firebase.</p>
-          <p>${escapeHtml(error.message)}</p>
+
+        if (equipment.current_holder_id && equipment.current_holder_id !== employee.employee_id) {
+          button.disabled = true;
+          box.innerHTML = `
+            <p class="error">Devolução bloqueada.</p>
+            <p>Este equipamento está registrado com outro usuário: <strong>${escapeHtml(equipment.current_holder_name || equipment.current_holder_id)}</strong>.</p>
+          `;
+          return;
+        }
+
+        box.innerHTML = `
+          <p class="success">Devolução permitida.</p>
+          <p>O equipamento voltará para o status <strong>available</strong>.</p>
         `;
       }
     }
 
-    function mostrarFuncionario(funcionario) {
-      const resultado = document.getElementById("resultado");
+    async function confirmarOperacao() {
+      const employee = estado.employee;
+      const equipment = estado.equipment;
+      const tipo = estado.operationType;
+      const notes = document.getElementById("operationNotes").value.trim();
 
-      resultado.innerHTML = `
-        <h3>Funcionário encontrado</h3>
+      if (!employee || !equipment || !tipo) {
+        mostrarErro("Fluxo incompleto", "Funcionário, equipamento ou tipo de operação não definido.");
+        return;
+      }
 
-        <div class="item">
-          <span>ID</span>
-          <span>${escapeHtml(funcionario.employee_id || "-")}</span>
+      const button = document.getElementById("confirmOperationButton");
+      button.disabled = true;
+      button.textContent = "Gravando no Firebase...";
+
+      const operationId = `OP_${Date.now()}`;
+
+      const operationPayload = {
+        operation_id: operationId,
+        type: tipo,
+        employee_id: employee.employee_id,
+        employee_name: employee.name || "",
+        equipment_id: equipment.equipment_id,
+        equipment_name: equipment.name || "",
+        previous_status: equipment.status || "",
+        notes: notes,
+        gps: {
+          enabled: false,
+          lat: "",
+          lng: ""
+        },
+        photos: {
+          photo_01: "",
+          photo_02: "",
+          photo_03: ""
+        },
+        created_at: {
+          ".sv": "timestamp"
+        }
+      };
+
+      let equipmentPatch = {};
+
+      if (tipo === "checkout") {
+        equipmentPatch = {
+          status: "borrowed",
+          current_holder_id: employee.employee_id,
+          current_holder_name: employee.name || "",
+          last_checkout_at: {
+            ".sv": "timestamp"
+          },
+          last_operation_id: operationId,
+          last_update: {
+            ".sv": "timestamp"
+          }
+        };
+      } else {
+        equipmentPatch = {
+          status: "available",
+          current_holder_id: "",
+          current_holder_name: "",
+          last_checkin_at: {
+            ".sv": "timestamp"
+          },
+          returned_by_id: employee.employee_id,
+          returned_by_name: employee.name || "",
+          last_operation_id: operationId,
+          last_update: {
+            ".sv": "timestamp"
+          }
+        };
+      }
+
+      try {
+        const operationResponse = await fetch(firebaseUrl(`/operations/${operationId}.json`), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(operationPayload)
+        });
+
+        if (!operationResponse.ok) {
+          throw new Error("Falha ao criar registro em operations.");
+        }
+
+        const equipmentResponse = await fetch(firebaseUrl(`/equipments/${encodeURIComponent(equipment.equipment_id)}.json`), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(equipmentPatch)
+        });
+
+        if (!equipmentResponse.ok) {
+          throw new Error("A operação foi criada, mas falhou ao atualizar o equipamento.");
+        }
+
+        mostrarSucesso(operationId, tipo);
+      } catch (error) {
+        mostrarErro("Erro ao gravar operação", error.message);
+      }
+    }
+
+    function mostrarSucesso(operationId, tipo) {
+      const tipoTexto = tipo === "checkout" ? "Retirada" : "Devolução";
+      const employee = estado.employee;
+      const equipment = estado.equipment;
+
+      document.getElementById("resultTitle").textContent = `${tipoTexto} concluída`;
+      document.getElementById("resultDetails").innerHTML = `
+        <p class="success">Operação gravada no Firebase com sucesso.</p>
+        <div class="info-list">
+          <div class="info-item"><span>Operação</span><span>${escapeHtml(operationId)}</span></div>
+          <div class="info-item"><span>Tipo</span><span>${escapeHtml(tipoTexto)}</span></div>
+          <div class="info-item"><span>Funcionário</span><span>${escapeHtml(employee.name || employee.employee_id)}</span></div>
+          <div class="info-item"><span>Equipamento</span><span>${escapeHtml(equipment.name || equipment.equipment_id)}</span></div>
         </div>
+      `;
 
-        <div class="item">
-          <span>Nome</span>
-          <span>${escapeHtml(funcionario.name || "-")}</span>
+      mostrarTela("screenResult");
+    }
+
+    function mostrarErro(titulo, mensagem) {
+      pararScanner();
+      document.getElementById("resultTitle").textContent = titulo;
+      document.getElementById("resultDetails").innerHTML = `
+        <p class="error">${escapeHtml(mensagem)}</p>
+        <button class="btn-outline" onclick="voltarAposErro()">Voltar</button>
+      `;
+      mostrarTela("screenResult");
+    }
+
+    function voltarAposErro() {
+      if (!estado.employee) {
+        mostrarTela("screenHome");
+      } else if (!estado.equipment) {
+        mostrarTela("screenEmployee");
+      } else {
+        mostrarTela("screenEquipment");
+      }
+    }
+
+    function resetarFluxo() {
+      pararScanner();
+      estado.employee = null;
+      estado.equipment = null;
+      estado.operationType = null;
+      document.getElementById("operationNotes").value = "";
+      mostrarTela("screenHome");
+    }
+
+    function gerarDetalhesFuncionario(employee) {
+      return `
+        <div class="info-list">
+          <div class="info-item"><span>ID</span><span>${escapeHtml(employee.employee_id || "-")}</span></div>
+          <div class="info-item"><span>Nome</span><span>${escapeHtml(employee.name || "-")}</span></div>
+          <div class="info-item"><span>Departamento</span><span>${escapeHtml(employee.department || "-")}</span></div>
+          <div class="info-item"><span>Cargo</span><span>${escapeHtml(employee.role || "-")}</span></div>
+          <div class="info-item"><span>Status</span><span><span class="status ${escapeHtml(employee.status || "inactive")}">${escapeHtml(employee.status || "-")}</span></span></div>
         </div>
-
-        <div class="item">
-          <span>Departamento</span>
-          <span>${escapeHtml(funcionario.department || "-")}</span>
-        </div>
-
-        <div class="item">
-          <span>Cargo</span>
-          <span>${escapeHtml(funcionario.role || "-")}</span>
-        </div>
-
-        <div class="item">
-          <span>Status</span>
-          <span>
-            <span class="status ${escapeHtml(funcionario.status || "inactive")}">
-              ${escapeHtml(funcionario.status || "-")}
-            </span>
-          </span>
-        </div>
-
-        ${funcionario.photo_url ? `<img src="${escapeAttribute(funcionario.photo_url)}" alt="Foto do funcionário">` : ""}
+        ${employee.photo_url ? `<img src="${escapeAttribute(employee.photo_url)}" alt="Foto do funcionário">` : ""}
       `;
     }
 
-    function mostrarEquipamento(equipamento) {
-      const resultado = document.getElementById("resultado");
-
-      resultado.innerHTML = `
-        <h3>Equipamento encontrado</h3>
-
-        <div class="item">
-          <span>ID</span>
-          <span>${escapeHtml(equipamento.equipment_id || "-")}</span>
+    function gerarDetalhesEquipamento(equipment) {
+      return `
+        <div class="info-list">
+          <div class="info-item"><span>ID</span><span>${escapeHtml(equipment.equipment_id || "-")}</span></div>
+          <div class="info-item"><span>Nome</span><span>${escapeHtml(equipment.name || "-")}</span></div>
+          <div class="info-item"><span>Categoria</span><span>${escapeHtml(equipment.category || "-")}</span></div>
+          <div class="info-item"><span>Local</span><span>${escapeHtml(equipment.location || "-")}</span></div>
+          <div class="info-item"><span>Status</span><span><span class="status ${escapeHtml(equipment.status || "inactive")}">${escapeHtml(equipment.status || "-")}</span></span></div>
+          <div class="info-item"><span>Usuário atual</span><span>${escapeHtml(equipment.current_holder_name || "Nenhum")}</span></div>
         </div>
-
-        <div class="item">
-          <span>Nome</span>
-          <span>${escapeHtml(equipamento.name || "-")}</span>
-        </div>
-
-        <div class="item">
-          <span>Categoria</span>
-          <span>${escapeHtml(equipamento.category || "-")}</span>
-        </div>
-
-        <div class="item">
-          <span>Local</span>
-          <span>${escapeHtml(equipamento.location || "-")}</span>
-        </div>
-
-        <div class="item">
-          <span>Status</span>
-          <span>
-            <span class="status ${escapeHtml(equipamento.status || "inactive")}">
-              ${escapeHtml(equipamento.status || "-")}
-            </span>
-          </span>
-        </div>
-
-        <div class="item">
-          <span>Usuário atual</span>
-          <span>${escapeHtml(equipamento.current_holder_name || "Nenhum")}</span>
-        </div>
-
-        ${equipamento.image_url ? `<img src="${escapeAttribute(equipamento.image_url)}" alt="Imagem do equipamento">` : ""}
+        ${equipment.image_url ? `<img src="${escapeAttribute(equipment.image_url)}" alt="Imagem do equipamento">` : ""}
       `;
     }
 
@@ -454,3 +799,4 @@
   </script>
 </body>
 </html>
+
