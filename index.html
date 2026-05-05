@@ -1,5 +1,10 @@
-<!-- https://github.com/checking-test-project/qrcode.manager/edit/main/index.html  -->
-<!-- https://checking-test-project.github.io/qrcode.manager/                       -->
+<!-- 
+
+URL projeto:           https://github.com/checking-test-project/qrcode.manager/edit/main/index.html  
+URL site:              https://checking-test-project.github.io/qrcode.manager/                       
+URL QRcode generator:  https://www.the-qrcode-generator.com/
+
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -799,4 +804,1758 @@
   </script>
 </body>
 </html>
+
+
+-->
+
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Controle de Equipamentos</title>
+
+  <!-- Leitor de QR Code -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --blue: #0b73f6;
+      --blue-dark: #075ed0;
+      --blue-soft: #eaf4ff;
+      --blue-soft-2: #f4f9ff;
+      --green: #18b957;
+      --green-soft: #e9f9ef;
+      --red: #dc2626;
+      --orange: #f97316;
+      --text: #0f172a;
+      --muted: #667085;
+      --muted-2: #98a2b3;
+      --line: #e7edf5;
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+      --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.055);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    body {
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 18px 28px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 4px 26px;
+    }
+
+    .brand-icon {
+      width: 58px;
+      height: 58px;
+      color: var(--blue);
+      flex: 0 0 58px;
+    }
+
+    .brand-title {
+      font-size: clamp(24px, 5.6vw, 32px);
+      font-weight: 850;
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+      color: #101828;
+    }
+
+    .brand-subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: clamp(17px, 4.1vw, 22px);
+      line-height: 1.15;
+    }
+
+    .screen {
+      display: none;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(231, 237, 245, 0.9);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 28px 20px;
+      margin-bottom: 22px;
+    }
+
+    .center-card {
+      text-align: center;
+    }
+
+    .icon-badge {
+      width: 128px;
+      height: 128px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 30% 25%, #f7fbff 0%, #e8f3ff 100%);
+      color: var(--blue);
+      position: relative;
+    }
+
+    .icon-badge svg {
+      width: 72px;
+      height: 72px;
+      stroke-width: 2.2;
+    }
+
+    .check-dot {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      right: 8px;
+      bottom: 10px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #39d978, #17ad52);
+      color: white;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 18px rgba(24, 185, 87, 0.28);
+      border: 4px solid white;
+    }
+
+    .check-dot svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 3.2;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    .screen-title {
+      font-size: clamp(32px, 8vw, 42px);
+      line-height: 1.16;
+      font-weight: 880;
+      letter-spacing: -0.055em;
+      color: #101828;
+      text-align: center;
+    }
+
+    .screen-title.small {
+      font-size: clamp(29px, 7vw, 38px);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 12px;
+      font-size: 19px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .accent-line {
+      width: 64px;
+      height: 5px;
+      border-radius: 99px;
+      background: var(--blue);
+      margin: 22px auto 28px;
+    }
+
+    .btn {
+      width: 100%;
+      min-height: 64px;
+      border: 0;
+      border-radius: 16px;
+      padding: 16px 18px;
+      font-size: 22px;
+      font-weight: 760;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      font-family: inherit;
+    }
+
+    .btn:active {
+      transform: scale(0.985);
+    }
+
+    .btn:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(180deg, #0d7cff 0%, #0867df 100%);
+      box-shadow: 0 10px 22px rgba(11, 115, 246, 0.22);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(180deg, #0a72ee 0%, #075ed0 100%);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--blue);
+      border: 2px solid var(--blue);
+      box-shadow: none;
+    }
+
+    .btn-soft {
+      background: #fbfcfe;
+      color: var(--blue);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .btn-green {
+      color: white;
+      background: linear-gradient(180deg, #1bd867 0%, #11a94d 100%);
+      box-shadow: 0 10px 22px rgba(24, 185, 87, 0.18);
+    }
+
+    .btn-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .nav-row {
+      min-height: 76px;
+      background: white;
+      border: 1px solid rgba(231, 237, 245, 0.95);
+      border-radius: 18px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 20px;
+      margin: 22px 4px;
+      color: var(--blue);
+      cursor: pointer;
+      font-size: 24px;
+      font-weight: 760;
+    }
+
+    .nav-row svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .nav-row .left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #101828;
+    }
+
+    .helper-strip {
+      min-height: 82px;
+      background: linear-gradient(180deg, #f3f9ff, #eaf4ff);
+      border-radius: 18px;
+      margin: 0 4px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #263446;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .helper-strip svg {
+      width: 38px;
+      height: 38px;
+      color: var(--blue);
+      flex: 0 0 auto;
+      stroke-width: 2.1;
+    }
+
+    .scanner-preview {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 18px;
+      background: #d7dbe2;
+      aspect-ratio: 4 / 3;
+      margin-top: 24px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+    }
+
+    #qrReader {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    #qrReader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    #qrReader img,
+    #qrReader button,
+    #qrReader select,
+    #qrReader span,
+    #qrReader div:not(:first-child) {
+      font-family: inherit !important;
+    }
+
+    .scanner-placeholder {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 14% 22%, rgba(45, 95, 35, 0.55) 0 8%, transparent 18%),
+        radial-gradient(circle at 93% 18%, rgba(20, 27, 36, 0.52) 0 10%, transparent 20%),
+        linear-gradient(135deg, rgba(94, 70, 48, 0.72), rgba(151, 130, 104, 0.7));
+      filter: blur(1.2px);
+      transform: scale(1.03);
+    }
+
+    .scanner-placeholder.equipment {
+      background:
+        linear-gradient(110deg, transparent 0 16%, rgba(9, 14, 22, 0.92) 17% 32%, transparent 33% 100%),
+        radial-gradient(circle at 15% 70%, rgba(18, 18, 18, 0.75) 0 12%, transparent 24%),
+        linear-gradient(135deg, #555, #222 45%, #0e5bd8 120%);
+    }
+
+    .scan-frame {
+      position: absolute;
+      inset: 10% 14%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .corner {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-color: white;
+      border-style: solid;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.18));
+    }
+
+    .corner.tl { left: 0; top: 0; border-width: 6px 0 0 6px; border-top-left-radius: 10px; }
+    .corner.tr { right: 0; top: 0; border-width: 6px 6px 0 0; border-top-right-radius: 10px; }
+    .corner.bl { left: 0; bottom: 0; border-width: 0 0 6px 6px; border-bottom-left-radius: 10px; }
+    .corner.br { right: 0; bottom: 0; border-width: 0 6px 6px 0; border-bottom-right-radius: 10px; }
+
+    .scan-line {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      top: 50%;
+      height: 4px;
+      border-radius: 99px;
+      background: #8ec7ff;
+      box-shadow: 0 0 18px rgba(76, 165, 255, 0.9), 0 0 2px white;
+      z-index: 4;
+      pointer-events: none;
+      animation: scanMove 1.9s ease-in-out infinite;
+    }
+
+    @keyframes scanMove {
+      0%, 100% { transform: translateY(-42px); opacity: 0.82; }
+      50% { transform: translateY(42px); opacity: 1; }
+    }
+
+    .scanner-text {
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.4;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .manual-panel {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px dashed #b9c8da;
+      border-radius: 16px;
+      background: #fbfdff;
+      text-align: left;
+    }
+
+    .manual-panel summary {
+      cursor: pointer;
+      color: var(--blue);
+      font-weight: 750;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: white;
+      min-height: 52px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 17px;
+      font-family: inherit;
+      margin-top: 12px;
+      outline: none;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(11, 115, 246, 0.12);
+    }
+
+    .details {
+      text-align: left;
+      width: 100%;
+      max-width: 330px;
+      margin: 26px auto 0;
+      font-size: 22px;
+      line-height: 1.45;
+    }
+
+    .details p + p {
+      margin-top: 12px;
+    }
+
+    .details strong {
+      font-weight: 850;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 30px auto 24px;
+      max-width: 340px;
+    }
+
+    .question {
+      font-size: 22px;
+      font-weight: 840;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 26px;
+    }
+
+    .info-row {
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 12px;
+      align-items: center;
+      background: linear-gradient(180deg, #fbfdff, #f7fbff);
+      border: 1px solid #e2ebf6;
+      border-radius: 14px;
+      padding: 12px 14px;
+      text-align: left;
+    }
+
+    .info-row .row-icon {
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+    }
+
+    .info-row .row-icon svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 2.1;
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.1;
+      margin-bottom: 5px;
+    }
+
+    .value {
+      display: block;
+      font-size: 21px;
+      color: #111827;
+      font-weight: 820;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 15px;
+      font-weight: 760;
+      background: var(--green-soft);
+      color: #087a35;
+    }
+
+    .status-pill.red {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .status-pill.orange {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    .notice {
+      background: #f6faff;
+      border: 1px solid #d8e9ff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: #344054;
+      font-size: 16px;
+      line-height: 1.4;
+      margin-top: 18px;
+      text-align: left;
+    }
+
+    .notice.error {
+      background: #fff7f7;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .photo-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .photo-row {
+      display: grid;
+      grid-template-columns: 122px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: white;
+      text-align: left;
+    }
+
+    .thumb {
+      height: 92px;
+      border-radius: 12px;
+      border: 2px dashed #c8d1dc;
+      background: #fbfcfe;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: #c2cad6;
+    }
+
+    .thumb svg {
+      width: 42px;
+      height: 42px;
+      stroke-width: 1.8;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-title {
+      font-size: 18px;
+      font-weight: 840;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    .photo-title span {
+      font-weight: 520;
+    }
+
+    .photo-btn {
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 17px;
+      gap: 8px;
+    }
+
+    .photo-btn svg {
+      width: 23px;
+      height: 23px;
+    }
+
+    .photo-count {
+      text-align: center;
+      margin: 18px 0 18px;
+      font-size: 20px;
+      color: #344054;
+    }
+
+    .photo-count strong {
+      color: var(--blue);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .gps-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--blue-soft-2);
+      border-radius: 16px;
+      min-height: 68px;
+      padding: 0 18px;
+      margin: 28px 0 24px;
+      font-size: 20px;
+      color: #101828;
+    }
+
+    .gps-box svg {
+      width: 34px;
+      height: 34px;
+      color: var(--blue);
+      stroke-width: 2.1;
+    }
+
+    .info-note {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.35;
+      padding: 0 8px;
+      margin-top: 6px;
+    }
+
+    .info-note svg {
+      width: 22px;
+      height: 22px;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+
+    .review-list, .receipt-list {
+      margin-top: 26px;
+      text-align: left;
+    }
+
+    .review-row, .receipt-row {
+      display: grid;
+      grid-template-columns: 42px minmax(105px, 1fr) minmax(120px, 1.15fr);
+      align-items: center;
+      gap: 12px;
+      min-height: 62px;
+      border-bottom: 1px solid var(--line);
+      color: #101828;
+    }
+
+    .review-row svg, .receipt-row svg {
+      width: 30px;
+      height: 30px;
+      color: var(--blue);
+      stroke-width: 2;
+    }
+
+    .review-label, .receipt-label {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .review-value, .receipt-value {
+      text-align: right;
+      font-size: 18px;
+      font-weight: 560;
+      color: #101828;
+      word-break: break-word;
+    }
+
+    .receipt-row {
+      grid-template-columns: 34px minmax(95px, 0.9fr) minmax(120px, 1.25fr);
+      min-height: 52px;
+    }
+
+    .success-icon {
+      width: 126px;
+      height: 126px;
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      background: var(--blue-soft);
+      display: grid;
+      place-items: center;
+    }
+
+    .success-icon-inner {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #0d7cff 0%, #0867df 100%);
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: 0 12px 22px rgba(11, 115, 246, 0.22);
+    }
+
+    .success-icon-inner svg {
+      width: 56px;
+      height: 56px;
+      stroke-width: 2.6;
+    }
+
+    .history-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 18px 4px 22px;
+      font-size: clamp(31px, 8vw, 42px);
+      font-weight: 880;
+      letter-spacing: -0.055em;
+    }
+
+    .history-title svg {
+      width: 48px;
+      height: 48px;
+      color: var(--blue);
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .history-card {
+      min-height: 116px;
+      background: white;
+      border: 1px solid rgba(231, 237, 245, 0.9);
+      border-radius: 18px;
+      box-shadow: var(--shadow-soft);
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 78px 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .history-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--blue-soft);
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+    }
+
+    .history-icon svg {
+      width: 42px;
+      height: 42px;
+      stroke-width: 2.1;
+    }
+
+    .history-date {
+      color: var(--muted);
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+
+    .history-op {
+      font-size: 22px;
+      font-weight: 850;
+      color: #111827;
+      line-height: 1.1;
+    }
+
+    .history-equipment {
+      color: #4b5563;
+      font-size: 17px;
+      margin-top: 7px;
+    }
+
+    .loading {
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 390px) {
+      .app { padding-left: 14px; padding-right: 14px; }
+      .card { padding: 24px 16px; }
+      .brand-icon { width: 50px; height: 50px; flex-basis: 50px; }
+      .icon-badge { width: 112px; height: 112px; }
+      .icon-badge svg { width: 64px; height: 64px; }
+      .btn { font-size: 19px; min-height: 58px; }
+      .btn-row { grid-template-columns: 1fr; }
+      .photo-row { grid-template-columns: 100px 1fr; }
+      .thumb { height: 82px; }
+      .review-row, .receipt-row { grid-template-columns: 34px 1fr; }
+      .review-value, .receipt-value { grid-column: 2; text-align: left; padding-bottom: 10px; }
+      .history-card { grid-template-columns: 64px 1fr; }
+      .history-card .status-pill { grid-column: 2; justify-self: start; margin-top: 8px; }
+      .history-icon { width: 58px; height: 58px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 21V12a5 5 0 0 1 5-5h9" stroke-width="4"/>
+          <path d="M43 7h9a5 5 0 0 1 5 5v9" stroke-width="4"/>
+          <path d="M57 43v9a5 5 0 0 1-5 5h-9" stroke-width="4"/>
+          <path d="M21 57h-9a5 5 0 0 1-5-5v-9" stroke-width="4"/>
+          <rect x="17" y="17" width="10" height="10" rx="1.5" stroke-width="4"/>
+          <rect x="37" y="17" width="10" height="10" rx="1.5" stroke-width="4"/>
+          <rect x="17" y="37" width="10" height="10" rx="1.5" stroke-width="4"/>
+          <path d="M37 37h4v4h-4zM47 37h2M37 47h2M44 45h6M32 31h4M31 43h3M43 31h4" stroke-width="4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">Controle de Equipamentos</div>
+        <div class="brand-subtitle">Check-in e Check-out</div>
+      </div>
+    </header>
+
+    <!-- TELA INICIAL -->
+    <section id="screenHome" class="screen active">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="id"></div>
+        <h1 class="screen-title small">Identifique o funcionário para iniciar</h1>
+        <div class="accent-line"></div>
+        <button class="btn btn-primary" onclick="startEmployeeScan()">
+          <span data-icon="scan"></span>
+          Ler QR do crachá
+        </button>
+      </div>
+
+      <button class="nav-row" onclick="openHistory()">
+        <span class="left"><span data-icon="clock"></span>Histórico</span>
+        <span data-icon="chevronRight"></span>
+      </button>
+
+      <div class="helper-strip">
+        <span data-icon="camera"></span>
+        <span>Use a câmera do celular para<br>ler o QR Code do crachá.</span>
+      </div>
+    </section>
+
+    <!-- SCANNER -->
+    <section id="screenScanner" class="screen">
+      <div class="card center-card">
+        <div id="scannerBadge" class="icon-badge hidden"></div>
+        <h1 id="scannerTitle" class="screen-title small">Leia o QR Code</h1>
+
+        <div class="scanner-preview">
+          <div id="scannerPlaceholder" class="scanner-placeholder"></div>
+          <div id="qrReader"></div>
+          <div class="scan-frame">
+            <span class="corner tl"></span>
+            <span class="corner tr"></span>
+            <span class="corner bl"></span>
+            <span class="corner br"></span>
+          </div>
+          <div class="scan-line"></div>
+        </div>
+
+        <p id="scannerHelp" class="scanner-text">Aponte a câmera para o QR Code.</p>
+
+        <div class="btn-row">
+          <button id="scannerActionButton" class="btn btn-primary" type="button" disabled>
+            <span data-icon="scan"></span>
+            Escaneando...
+          </button>
+          <button class="btn btn-outline" type="button" onclick="cancelScan()">Cancelar</button>
+        </div>
+
+        <details class="manual-panel">
+          <summary>Entrada manual para teste</summary>
+          <input id="manualInput" type="text" placeholder="EMP_0001 ou EQ_BIKE_001" autocomplete="off" />
+          <button class="btn btn-outline" style="margin-top:12px; min-height:52px; font-size:17px;" onclick="manualRead()">Usar ID digitado</button>
+        </details>
+      </div>
+    </section>
+
+    <!-- FUNCIONÁRIO IDENTIFICADO -->
+    <section id="screenEmployee" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge">
+          <span data-icon="id"></span>
+          <span class="check-dot" data-icon="check"></span>
+        </div>
+        <h1 class="screen-title small">Funcionário identificado</h1>
+        <div id="employeeDetails" class="details"></div>
+        <div class="divider"></div>
+        <p class="question">O que deseja fazer?</p>
+        <div class="btn-stack">
+          <button class="btn btn-primary" onclick="selectOperation('checkout')">Retirar equipamento</button>
+          <button class="btn btn-outline" onclick="selectOperation('checkin')">Devolver equipamento</button>
+          <button class="btn btn-soft" onclick="resetFlow()">Cancelar operação</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIRMAÇÃO DO EQUIPAMENTO -->
+    <section id="screenConfirmEquipment" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="bike"></div>
+        <h1 class="screen-title small">Confirme os dados</h1>
+        <div class="accent-line"></div>
+        <div id="equipmentDetails" class="info-list"></div>
+        <div id="operationNotice" class="notice"></div>
+        <div class="btn-stack">
+          <button id="goPhotosButton" class="btn btn-primary" onclick="openPhotos()">Confirmar e adicionar fotos</button>
+          <button class="btn btn-outline" onclick="startEquipmentScan()">Voltar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOTOS -->
+    <section id="screenPhotos" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="camera"></div>
+        <h1 class="screen-title small">Fotos do equipamento</h1>
+        <p class="subtitle">Adicione até 3 fotos</p>
+        <div class="accent-line"></div>
+
+        <div class="photo-list">
+          <div class="photo-row">
+            <div id="thumb0" class="thumb"><span data-icon="camera"></span></div>
+            <div>
+              <div class="photo-title">Foto 1 <span>— obrigatória</span></div>
+              <button class="btn btn-primary photo-btn" onclick="pickPhoto(0)"><span data-icon="camera"></span>Tirar / refazer</button>
+            </div>
+          </div>
+
+          <div class="photo-row">
+            <div id="thumb1" class="thumb"><span data-icon="camera"></span></div>
+            <div>
+              <div class="photo-title">Foto 2 <span>— opcional</span></div>
+              <button class="btn btn-outline photo-btn" onclick="pickPhoto(1)"><span data-icon="camera"></span>Adicionar foto</button>
+            </div>
+          </div>
+
+          <div class="photo-row">
+            <div id="thumb2" class="thumb"><span data-icon="camera"></span></div>
+            <div>
+              <div class="photo-title">Foto 3 <span>— opcional</span></div>
+              <button class="btn btn-outline photo-btn" onclick="pickPhoto(2)"><span data-icon="camera"></span>Adicionar foto</button>
+            </div>
+          </div>
+        </div>
+
+        <input id="photoInput0" type="file" accept="image/*" capture="environment" onchange="handlePhoto(event, 0)" />
+        <input id="photoInput1" type="file" accept="image/*" capture="environment" onchange="handlePhoto(event, 1)" />
+        <input id="photoInput2" type="file" accept="image/*" capture="environment" onchange="handlePhoto(event, 2)" />
+
+        <div class="photo-count">Fotos adicionadas: <strong id="photoCount">0/3</strong></div>
+        <button class="btn btn-primary" onclick="openGpsChoice()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- GPS -->
+    <section id="screenGps" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="pin"></div>
+        <h1 class="screen-title small">Deseja anexar a localização atual?</h1>
+        <p class="subtitle">A localização ajuda na rastreabilidade da operação.</p>
+
+        <div class="gps-box">
+          <span data-icon="target"></span>
+          <span id="gpsStatusText">GPS disponível</span>
+        </div>
+
+        <div class="btn-stack">
+          <button id="gpsButton" class="btn btn-primary" onclick="captureGps()">Usar localização</button>
+          <button class="btn btn-outline" onclick="skipGps()">Continuar sem GPS</button>
+        </div>
+      </div>
+      <div class="info-note">
+        <span data-icon="info"></span>
+        <span>O navegador poderá solicitar permissão de localização.</span>
+      </div>
+    </section>
+
+    <!-- REVISÃO -->
+    <section id="screenReview" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="clipboard"></div>
+        <h1 class="screen-title small">Revise antes de enviar</h1>
+        <div class="accent-line"></div>
+        <div id="reviewDetails" class="review-list"></div>
+        <div class="btn-stack">
+          <button id="submitButton" class="btn btn-primary" onclick="submitOperation()"><span data-icon="send"></span>Enviar registro</button>
+          <button class="btn btn-outline" onclick="showScreen('screenPhotos')"><span data-icon="arrowLeft"></span>Voltar e corrigir</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUCESSO -->
+    <section id="screenSuccess" class="screen">
+      <div class="card center-card" id="receiptArea">
+        <div class="success-icon"><div class="success-icon-inner" data-icon="check"></div></div>
+        <h1 class="screen-title small">Registro enviado com sucesso!</h1>
+        <div class="accent-line"></div>
+        <div id="successDetails" class="receipt-list"></div>
+        <div class="btn-stack">
+          <button class="btn btn-primary" onclick="resetFlow()">Nova operação</button>
+          <button class="btn btn-outline" onclick="window.print()">Ver comprovante</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="screenHistory" class="screen">
+      <div class="history-title"><span data-icon="clock"></span><span>Meu histórico</span></div>
+      <div id="historyList" class="history-list"></div>
+      <button class="btn btn-outline" onclick="showScreen('screenHome')"><span data-icon="arrowLeft"></span>Voltar ao início</button>
+    </section>
+  </main>
+
+  <script>
+    const FIREBASE_URL = "https://checking-project-b423d-default-rtdb.europe-west1.firebasedatabase.app";
+
+    // Para GitHub Pages, não coloque token secreto aqui.
+    // Use regras públicas apenas durante o protótipo.
+    const FIREBASE_AUTH = "";
+
+    let qrScanner = null;
+    let scanMode = "employee";
+    let readLocked = false;
+
+    const state = {
+      employee: null,
+      equipment: null,
+      operationType: null,
+      photos: [null, null, null],
+      gps: {
+        enabled: false,
+        captured: false,
+        lat: "",
+        lng: "",
+        accuracy: ""
+      },
+      operationId: ""
+    };
+
+    const icons = {
+      id: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="12" y="18" width="40" height="30" rx="4"/><path d="M29 18v-5a3 3 0 0 1 6 0v5"/><circle cx="25" cy="32" r="5"/><path d="M18 43c1.8-5 11.8-5 14 0"/><path d="M38 29h8M38 37h8"/></svg>`,
+      scan: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 24V14a1 1 0 0 1 1-1h10"/><path d="M40 13h10a1 1 0 0 1 1 1v10"/><path d="M51 40v10a1 1 0 0 1-1 1H40"/><path d="M24 51H14a1 1 0 0 1-1-1V40"/><path d="M24 32h16"/></svg>`,
+      clock: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="23"/><path d="M32 18v15l10 6"/></svg>`,
+      camera: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22h7l4-5h8l4 5h5a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V28a6 6 0 0 1 6-6Z"/><circle cx="32" cy="35" r="9"/></svg>`,
+      chevronRight: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m24 14 18 18-18 18"/></svg>`,
+      check: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m18 33 10 10 20-24"/></svg>`,
+      bike: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="42" r="10"/><circle cx="48" cy="42" r="10"/><path d="M18 42 29 25h9l10 17M29 25l8 17H18M38 25l-2-7h8M26 18h-7M33 32l-4 7h6l-4 8"/></svg>`,
+      user: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="23" r="9"/><path d="M16 52c3-11 29-11 32 0"/></svg>`,
+      download: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M32 12v28"/><path d="m21 29 11 11 11-11"/><path d="M17 42v9h30v-9"/></svg>`,
+      upload: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M32 44V16"/><path d="m21 27 11-11 11 11"/><path d="M17 42v9h30v-9"/></svg>`,
+      tag: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 34 34 10h16v16L26 50 10 34Z"/><circle cx="43" cy="21" r="3"/></svg>`,
+      status: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor"><circle cx="32" cy="32" r="21" stroke-width="3"/><circle cx="32" cy="32" r="15" fill="currentColor" stroke="none" opacity="0.18"/></svg>`,
+      card: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="12" y="18" width="40" height="28" rx="4"/><path d="M20 28h10M20 36h8M38 28h6M38 36h6"/></svg>`,
+      pin: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M32 57s18-17 18-34a18 18 0 0 0-36 0c0 17 18 34 18 34Z"/><circle cx="32" cy="23" r="6"/></svg>`,
+      target: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="13"/><circle cx="32" cy="32" r="4"/><path d="M32 8v8M32 48v8M8 32h8M48 32h8"/></svg>`,
+      info: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="24"/><path d="M32 29v16"/><path d="M32 19h.01"/></svg>`,
+      clipboard: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M24 14h16l2 6h6v34H16V20h6l2-6Z"/><path d="M24 32l4 4 8-9M24 44l4 4 8-9M40 33h6M40 45h6"/></svg>`,
+      cube: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m32 8 20 11v26L32 56 12 45V19L32 8Z"/><path d="M12 19 32 30l20-11M32 30v26"/></svg>`,
+      arrowUpRight: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 46 46 18M26 18h20v20"/></svg>`,
+      calendar: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="16" width="38" height="36" rx="5"/><path d="M22 10v10M42 10v10M13 27h38"/></svg>`,
+      calendarClock: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="14" width="34" height="34" rx="5"/><path d="M18 8v10M36 8v10M10 25h34"/><circle cx="44" cy="44" r="12"/><path d="M44 38v7l5 3"/></svg>`,
+      send: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M55 9 26 38"/><path d="m55 9-17 46-12-17-17-8 46-21Z"/></svg>`,
+      arrowLeft: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M40 16 24 32l16 16"/><path d="M25 32h28"/></svg>`,
+      doc: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 8h19l11 11v37H19V8Z"/><path d="M38 8v13h11M25 34h14M25 43h14"/></svg>`
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      injectIcons();
+      updatePhotoUI();
+    });
+
+    function injectIcons(root = document) {
+      root.querySelectorAll("[data-icon]").forEach(el => {
+        const name = el.getAttribute("data-icon");
+        if (icons[name]) el.innerHTML = icons[name];
+      });
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function firebaseUrl(path) {
+      let url = FIREBASE_URL + path;
+      if (FIREBASE_AUTH) {
+        url += (path.includes("?") ? "&" : "?") + "auth=" + encodeURIComponent(FIREBASE_AUTH);
+      }
+      return url;
+    }
+
+    function normalizeStatus(status) {
+      if (status === "available") return "Disponível";
+      if (status === "borrowed") return "Emprestado";
+      if (status === "maintenance") return "Manutenção";
+      if (status === "active") return "Autorizado";
+      if (status === "inactive") return "Inativo";
+      return status || "-";
+    }
+
+    function operationLabel(type) {
+      return type === "checkout" ? "Retirada" : "Devolução";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function resetFlow() {
+      stopScanner();
+      state.employee = null;
+      state.equipment = null;
+      state.operationType = null;
+      state.photos = [null, null, null];
+      state.gps = { enabled: false, captured: false, lat: "", lng: "", accuracy: "" };
+      state.operationId = "";
+      updatePhotoUI();
+      showScreen("screenHome");
+    }
+
+    function startEmployeeScan() {
+      scanMode = "employee";
+      document.getElementById("scannerBadge").classList.add("hidden");
+      document.getElementById("scannerTitle").innerHTML = "Leia o QR Code<br>do crachá";
+      document.getElementById("scannerHelp").textContent = "Aponte a câmera para o crachá";
+      document.getElementById("scannerPlaceholder").className = "scanner-placeholder";
+      document.getElementById("manualInput").placeholder = "EMP_0001";
+      startScanner();
+    }
+
+    function startEquipmentScan() {
+      scanMode = "equipment";
+      const badge = document.getElementById("scannerBadge");
+      badge.classList.remove("hidden");
+      badge.setAttribute("data-icon", "bike");
+      badge.innerHTML = icons.bike;
+      document.getElementById("scannerTitle").innerHTML = "Leia o QR Code<br>do equipamento";
+      document.getElementById("scannerHelp").textContent = "Ex.: bicicleta elétrica, ferramenta ou rádio";
+      document.getElementById("scannerPlaceholder").className = "scanner-placeholder equipment";
+      document.getElementById("manualInput").placeholder = "EQ_BIKE_001";
+      startScanner();
+    }
+
+    async function startScanner() {
+      showScreen("screenScanner");
+      readLocked = false;
+      document.getElementById("manualInput").value = "";
+      document.getElementById("qrReader").innerHTML = "";
+      await stopScanner();
+
+      if (typeof Html5Qrcode === "undefined") {
+        alert("Biblioteca de QR Code não carregada. Verifique a conexão com a internet.");
+        return;
+      }
+
+      qrScanner = new Html5Qrcode("qrReader");
+
+      try {
+        await qrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          decodedText => {
+            if (readLocked) return;
+            readLocked = true;
+            processScannedCode(decodedText.trim());
+          },
+          () => {}
+        );
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
+    async function stopScanner() {
+      if (qrScanner) {
+        try {
+          const isScanning = qrScanner.getState && qrScanner.getState() === 2;
+          if (isScanning) await qrScanner.stop();
+          await qrScanner.clear();
+        } catch (error) {
+          console.warn("Scanner já estava parado.", error);
+        }
+        qrScanner = null;
+      }
+      const reader = document.getElementById("qrReader");
+      if (reader) reader.innerHTML = "";
+    }
+
+    function cancelScan() {
+      stopScanner();
+      if (scanMode === "employee") {
+        showScreen("screenHome");
+      } else {
+        showScreen("screenEmployee");
+      }
+    }
+
+    function manualRead() {
+      const id = document.getElementById("manualInput").value.trim();
+      processScannedCode(id);
+    }
+
+    async function processScannedCode(id) {
+      if (!id) {
+        alert("Digite ou leia um ID primeiro.");
+        return;
+      }
+      await stopScanner();
+
+      if (scanMode === "employee") {
+        await loadEmployee(id);
+      } else {
+        await loadEquipment(id);
+      }
+    }
+
+    async function loadEmployee(id) {
+      if (!id.startsWith("EMP_")) {
+        alert("QR Code inválido. O crachá deve começar com EMP_. Código lido: " + id);
+        showScreen("screenHome");
+        return;
+      }
+
+      try {
+        const response = await fetch(firebaseUrl(`/employees/${encodeURIComponent(id)}.json`));
+        const employee = await response.json();
+
+        if (!employee) {
+          alert("Funcionário não encontrado: " + id);
+          showScreen("screenHome");
+          return;
+        }
+
+        if (employee.status !== "active") {
+          alert("Funcionário não autorizado ou inativo.");
+          showScreen("screenHome");
+          return;
+        }
+
+        state.employee = employee;
+        document.getElementById("employeeDetails").innerHTML = `
+          <p><strong>Nome:</strong> ${escapeHtml(employee.name || "-")}</p>
+          <p><strong>Setor:</strong> ${escapeHtml(employee.department || "-")}</p>
+          <p><strong>Status:</strong> ${escapeHtml(normalizeStatus(employee.status))}</p>
+        `;
+        showScreen("screenEmployee");
+      } catch (error) {
+        alert("Erro ao consultar funcionário: " + error.message);
+        showScreen("screenHome");
+      }
+    }
+
+    function selectOperation(type) {
+      state.operationType = type;
+      state.equipment = null;
+      state.photos = [null, null, null];
+      state.gps = { enabled: false, captured: false, lat: "", lng: "", accuracy: "" };
+      updatePhotoUI();
+      startEquipmentScan();
+    }
+
+    async function loadEquipment(id) {
+      if (!id.startsWith("EQ_")) {
+        alert("QR Code inválido. O equipamento deve começar com EQ_. Código lido: " + id);
+        showScreen("screenEmployee");
+        return;
+      }
+
+      try {
+        const response = await fetch(firebaseUrl(`/equipments/${encodeURIComponent(id)}.json`));
+        const equipment = await response.json();
+
+        if (!equipment) {
+          alert("Equipamento não encontrado: " + id);
+          showScreen("screenEmployee");
+          return;
+        }
+
+        state.equipment = equipment;
+        renderEquipmentConfirmation();
+        showScreen("screenConfirmEquipment");
+      } catch (error) {
+        alert("Erro ao consultar equipamento: " + error.message);
+        showScreen("screenEmployee");
+      }
+    }
+
+    function renderEquipmentConfirmation() {
+      const employee = state.employee;
+      const equipment = state.equipment;
+      const operation = state.operationType;
+
+      document.getElementById("equipmentDetails").innerHTML = `
+        ${infoRow("user", "Funcionário", employee.name || employee.employee_id || "-")}
+        ${infoRow(operation === "checkout" ? "download" : "upload", "Operação", operationLabel(operation))}
+        ${infoRow("tag", "Equipamento", equipment.name || "-")}
+        ${infoRow("card", "ID", equipment.equipment_id || "-")}
+        ${infoRow("status", "Status atual", normalizeStatus(equipment.status))}
+      `;
+
+      const notice = document.getElementById("operationNotice");
+      const button = document.getElementById("goPhotosButton");
+      button.disabled = false;
+      notice.className = "notice";
+
+      if (operation === "checkout") {
+        if (equipment.status !== "available") {
+          button.disabled = true;
+          notice.className = "notice error";
+          notice.innerHTML = `<strong>Retirada bloqueada.</strong><br>Este equipamento não está disponível. Status atual: ${escapeHtml(normalizeStatus(equipment.status))}.`;
+          return;
+        }
+        notice.innerHTML = `Retirada permitida. O equipamento será vinculado a <strong>${escapeHtml(employee.name || employee.employee_id)}</strong>.`;
+        return;
+      }
+
+      if (operation === "checkin") {
+        if (equipment.status !== "borrowed") {
+          button.disabled = true;
+          notice.className = "notice error";
+          notice.innerHTML = `<strong>Devolução bloqueada.</strong><br>Este equipamento não está marcado como emprestado.`;
+          return;
+        }
+
+        if (equipment.current_holder_id && equipment.current_holder_id !== employee.employee_id) {
+          button.disabled = true;
+          notice.className = "notice error";
+          notice.innerHTML = `<strong>Devolução bloqueada.</strong><br>Este equipamento está registrado com outro usuário: ${escapeHtml(equipment.current_holder_name || equipment.current_holder_id)}.`;
+          return;
+        }
+
+        notice.innerHTML = `Devolução permitida. O equipamento voltará para o status <strong>Disponível</strong>.`;
+      }
+    }
+
+    function infoRow(icon, label, value) {
+      return `
+        <div class="info-row">
+          <div class="row-icon">${icons[icon] || ""}</div>
+          <div><span class="label">${escapeHtml(label)}</span><span class="value">${escapeHtml(value)}</span></div>
+        </div>
+      `;
+    }
+
+    function openPhotos() {
+      updatePhotoUI();
+      showScreen("screenPhotos");
+    }
+
+    function pickPhoto(index) {
+      document.getElementById(`photoInput${index}`).click();
+    }
+
+    async function handlePhoto(event, index) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      try {
+        const compressed = await compressImage(file, 850, 0.58);
+        state.photos[index] = compressed;
+        updatePhotoUI();
+      } catch (error) {
+        alert("Erro ao processar foto: " + error.message);
+      }
+    }
+
+    function compressImage(file, maxSize = 850, quality = 0.58) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let { width, height } = img;
+
+            if (width > height && width > maxSize) {
+              height = Math.round(height * (maxSize / width));
+              width = maxSize;
+            } else if (height >= width && height > maxSize) {
+              width = Math.round(width * (maxSize / height));
+              height = maxSize;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function updatePhotoUI() {
+      const count = state.photos.filter(Boolean).length;
+      const countEl = document.getElementById("photoCount");
+      if (countEl) countEl.textContent = `${count}/3`;
+
+      state.photos.forEach((photo, index) => {
+        const thumb = document.getElementById(`thumb${index}`);
+        if (!thumb) return;
+        if (photo) {
+          thumb.innerHTML = `<img src="${photo}" alt="Foto ${index + 1}">`;
+        } else {
+          thumb.innerHTML = icons.camera;
+        }
+      });
+    }
+
+    function openGpsChoice() {
+      const count = state.photos.filter(Boolean).length;
+      if (count < 1) {
+        alert("Adicione pelo menos a Foto 1 antes de continuar.");
+        return;
+      }
+      document.getElementById("gpsStatusText").textContent = "GPS disponível";
+      document.getElementById("gpsButton").disabled = false;
+      document.getElementById("gpsButton").textContent = "Usar localização";
+      showScreen("screenGps");
+    }
+
+    function captureGps() {
+      const button = document.getElementById("gpsButton");
+      const status = document.getElementById("gpsStatusText");
+
+      if (!navigator.geolocation) {
+        alert("Geolocalização não disponível neste navegador.");
+        skipGps();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Capturando...";
+      status.textContent = "Capturando localização...";
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          state.gps = {
+            enabled: true,
+            captured: true,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+          renderReview();
+          showScreen("screenReview");
+        },
+        error => {
+          alert("Não foi possível capturar o GPS: " + error.message);
+          button.disabled = false;
+          button.textContent = "Usar localização";
+          status.textContent = "GPS disponível";
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function skipGps() {
+      state.gps = { enabled: false, captured: false, lat: "", lng: "", accuracy: "" };
+      renderReview();
+      showScreen("screenReview");
+    }
+
+    function renderReview() {
+      const employee = state.employee;
+      const equipment = state.equipment;
+      const photoCount = state.photos.filter(Boolean).length;
+      const gpsText = state.gps.captured ? "Capturada" : "Não anexada";
+
+      document.getElementById("reviewDetails").innerHTML = `
+        ${reviewRow("user", "Funcionário", employee.name || employee.employee_id || "-")}
+        ${reviewRow("arrowUpRight", "Operação", operationLabel(state.operationType))}
+        ${reviewRow("cube", "Equipamento", equipment.name || equipment.equipment_id || "-")}
+        ${reviewRow("camera", "Fotos", `${photoCount} ${photoCount === 1 ? "anexada" : "anexadas"}`)}
+        ${reviewRow("pin", "Localização", gpsText)}
+        ${reviewRow("calendar", "Data e hora", "Será registrada pelo servidor")}
+      `;
+    }
+
+    function reviewRow(icon, label, value) {
+      return `
+        <div class="review-row">
+          <div>${icons[icon] || ""}</div>
+          <div class="review-label">${escapeHtml(label)}</div>
+          <div class="review-value">${escapeHtml(value)}</div>
+        </div>
+      `;
+    }
+
+    function receiptRow(icon, label, value) {
+      return `
+        <div class="receipt-row">
+          <div>${icons[icon] || ""}</div>
+          <div class="receipt-label">${escapeHtml(label)}</div>
+          <div class="receipt-value">${escapeHtml(value)}</div>
+        </div>
+      `;
+    }
+
+    async function submitOperation() {
+      const employee = state.employee;
+      const equipment = state.equipment;
+      const type = state.operationType;
+      const submitButton = document.getElementById("submitButton");
+
+      if (!employee || !equipment || !type) {
+        alert("Fluxo incompleto. Comece novamente.");
+        resetFlow();
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.innerHTML = "Enviando...";
+
+      const operationId = makeOperationId();
+      state.operationId = operationId;
+
+      const photosPayload = {};
+      state.photos.forEach((photo, index) => {
+        photosPayload[`photo_0${index + 1}`] = photo || "";
+      });
+
+      const operationPayload = {
+        operation_id: operationId,
+        type,
+        employee_id: employee.employee_id || "",
+        employee_name: employee.name || "",
+        equipment_id: equipment.equipment_id || "",
+        equipment_name: equipment.name || "",
+        previous_status: equipment.status || "",
+        photo_count: state.photos.filter(Boolean).length,
+        photos: photosPayload,
+        gps: {
+          enabled: state.gps.enabled,
+          captured: state.gps.captured,
+          lat: state.gps.lat,
+          lng: state.gps.lng,
+          accuracy: state.gps.accuracy
+        },
+        created_at: { ".sv": "timestamp" }
+      };
+
+      let equipmentPatch = {};
+
+      if (type === "checkout") {
+        equipmentPatch = {
+          status: "borrowed",
+          current_holder_id: employee.employee_id || "",
+          current_holder_name: employee.name || "",
+          last_checkout_at: { ".sv": "timestamp" },
+          last_operation_id: operationId,
+          last_update: { ".sv": "timestamp" }
+        };
+      } else {
+        equipmentPatch = {
+          status: "available",
+          current_holder_id: "",
+          current_holder_name: "",
+          returned_by_id: employee.employee_id || "",
+          returned_by_name: employee.name || "",
+          last_checkin_at: { ".sv": "timestamp" },
+          last_operation_id: operationId,
+          last_update: { ".sv": "timestamp" }
+        };
+      }
+
+      try {
+        const opResponse = await fetch(firebaseUrl(`/operations/${operationId}.json`), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(operationPayload)
+        });
+
+        if (!opResponse.ok) throw new Error("Falha ao gravar operação.");
+
+        const equipmentResponse = await fetch(firebaseUrl(`/equipments/${encodeURIComponent(equipment.equipment_id)}.json`), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(equipmentPatch)
+        });
+
+        if (!equipmentResponse.ok) throw new Error("Operação criada, mas falhou ao atualizar o equipamento.");
+
+        renderSuccess();
+        showScreen("screenSuccess");
+      } catch (error) {
+        alert("Erro ao enviar registro: " + error.message);
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = `${icons.send}Enviar registro`;
+      }
+    }
+
+    function makeOperationId() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return `LOG_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    }
+
+    function formatNow() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} - ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+
+    function renderSuccess() {
+      const employee = state.employee;
+      const equipment = state.equipment;
+      const photoCount = state.photos.filter(Boolean).length;
+      const gpsText = state.gps.captured ? "Sim" : "Não";
+
+      document.getElementById("successDetails").innerHTML = `
+        ${receiptRow("doc", "Registro", state.operationId)}
+        ${receiptRow("user", "Funcionário", employee.name || employee.employee_id || "-")}
+        ${receiptRow("cube", "Equipamento", equipment.name || equipment.equipment_id || "-")}
+        ${receiptRow("arrowUpRight", "Operação", operationLabel(state.operationType))}
+        ${receiptRow("calendar", "Data", formatNow())}
+        ${receiptRow("camera", "Fotos", photoCount)}
+        ${receiptRow("pin", "GPS", gpsText)}
+      `;
+    }
+
+    async function openHistory() {
+      showScreen("screenHistory");
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = `<div class="loading">Carregando histórico...</div>`;
+
+      try {
+        const response = await fetch(firebaseUrl(`/operations.json`));
+        const data = await response.json();
+
+        if (!data) {
+          historyList.innerHTML = `<div class="loading">Nenhuma operação registrada ainda.</div>`;
+          return;
+        }
+
+        const items = Object.values(data)
+          .filter(item => item && item.operation_id)
+          .sort((a, b) => String(b.operation_id).localeCompare(String(a.operation_id)))
+          .slice(0, 10);
+
+        if (!items.length) {
+          historyList.innerHTML = `<div class="loading">Nenhuma operação registrada ainda.</div>`;
+          return;
+        }
+
+        historyList.innerHTML = items.map(item => historyCard(item)).join("");
+      } catch (error) {
+        historyList.innerHTML = `<div class="loading">Erro ao carregar histórico: ${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function historyCard(item) {
+      const type = operationLabel(item.type);
+      const equipment = item.equipment_name || item.equipment_id || "Equipamento";
+      const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
+
+      return `
+        <div class="history-card">
+          <div class="history-icon">${icons.calendarClock}</div>
+          <div>
+            <div class="history-date">${escapeHtml(date)}</div>
+            <div class="history-op">${escapeHtml(type)}</div>
+            <div class="history-equipment">${escapeHtml(equipment)}</div>
+          </div>
+          <span class="status-pill">Concluído</span>
+        </div>
+      `;
+    }
+
+    function operationIdToDate(operationId) {
+      const match = String(operationId || "").match(/LOG_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+      if (!match) return "";
+      return `${match[3]}/${match[2]}/${match[1]} - ${match[4]}:${match[5]}`;
+    }
+  </script>
+</body>
+</html>
+
 
