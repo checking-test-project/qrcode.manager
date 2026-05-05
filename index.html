@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste QR Code + Firebase</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #16a34a;
+      --red: #dc2626;
+      --gray: #64748b;
+      --light: #f1f5f9;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--light);
+      color: var(--text);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      font-size: 23px;
+      margin: 0 0 8px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      font-size: 19px;
+      margin: 0 0 12px;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 0 0 12px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0 0 14px;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .manual-box {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px #dbeafe;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--blue-dark);
+    }
+
+    .btn-gray {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    #reader video {
+      border-radius: 16px;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .item span:first-child {
+      color: var(--muted);
+    }
+
+    .item span:last-child {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 11px;
+      border-radius: 999px;
+      color: white;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .available, .active { background: var(--green); }
+    .borrowed, .inactive { background: var(--red); }
+    .maintenance { background: #f97316; }
+
+    img {
+      width: 100%;
+      border-radius: 16px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .success {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .error {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .code-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: Consolas, monospace;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="card">
+      <h1>Teste QR Code + Firebase</h1>
+      <p>
+        Leia um QR Code de funcionário ou equipamento. O QR Code deve conter apenas o ID, por exemplo <strong>EMP_0001</strong> ou <strong>EQ_BIKE_001</strong>.
+      </p>
+      <p class="small">
+        No celular, prefira testar em uma página HTTPS, como GitHub Pages. A câmera pode não funcionar se o arquivo for aberto diretamente como arquivo local.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Leitor de QR Code</h2>
+      <div id="reader"></div>
+      <button class="btn-gray" onclick="reiniciarLeitor()">Reiniciar leitura</button>
+
+      <div class="manual-box">
+        <p class="small">Entrada manual apenas para teste:</p>
+        <input id="manualInput" type="text" placeholder="EMP_0001 ou EQ_BIKE_001" />
+        <button class="btn-primary" onclick="consultarManual()">Consultar manualmente</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Resultado</h2>
+      <div id="resultado">Aguardando leitura do QR Code...</div>
+    </div>
+  </div>
+
+  <script>
+    const FIREBASE_URL = "https://checking-project-b423d-default-rtdb.europe-west1.firebasedatabase.app";
+
+    // Se suas regras estão públicas para protótipo, deixe vazio.
+    const FIREBASE_AUTH = "";
+
+    // Se o Firebase exigir token, use apenas para teste local:
+    // const FIREBASE_AUTH = "SEU_TOKEN_AQUI";
+
+    let html5QrcodeScanner = null;
+    let leituraBloqueada = false;
+
+    iniciarLeitor();
+
+    function iniciarLeitor() {
+      leituraBloqueada = false;
+      document.getElementById("resultado").innerHTML = "Aguardando leitura do QR Code...";
+
+      html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        {
+          fps: 10,
+          qrbox: { width: 240, height: 240 },
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        },
+        false
+      );
+
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function reiniciarLeitor() {
+      leituraBloqueada = false;
+      document.getElementById("resultado").innerHTML = "Reiniciando leitor...";
+
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear()
+          .then(() => {
+            document.getElementById("reader").innerHTML = "";
+            iniciarLeitor();
+          })
+          .catch(() => {
+            document.getElementById("reader").innerHTML = "";
+            iniciarLeitor();
+          });
+      } else {
+        iniciarLeitor();
+      }
+    }
+
+    function onScanSuccess(decodedText) {
+      if (leituraBloqueada) return;
+      leituraBloqueada = true;
+
+      const idLido = decodedText.trim();
+
+      document.getElementById("resultado").innerHTML = `
+        <p class="success">QR Code lido com sucesso.</p>
+        <div class="code-box">${escapeHtml(idLido)}</div>
+        <p>Consultando Firebase...</p>
+      `;
+
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(() => {});
+      }
+
+      consultarID(idLido);
+    }
+
+    function onScanFailure(error) {
+      // Erros de leitura contínuos são esperados enquanto nenhum QR Code é detectado.
+      // Por isso, não mostramos esses erros na tela.
+    }
+
+    function consultarManual() {
+      const id = document.getElementById("manualInput").value.trim();
+      consultarID(id);
+    }
+
+    async function consultarID(id) {
+      const resultado = document.getElementById("resultado");
+
+      if (!id) {
+        resultado.innerHTML = "<p class='error'>Digite ou leia um ID primeiro.</p>";
+        return;
+      }
+
+      let path = "";
+
+      if (id.startsWith("EMP_")) {
+        path = `/employees/${id}.json`;
+      } else if (id.startsWith("EQ_")) {
+        path = `/equipments/${id}.json`;
+      } else {
+        resultado.innerHTML = `
+          <p class="error">ID inválido.</p>
+          <p>O QR Code lido foi:</p>
+          <div class="code-box">${escapeHtml(id)}</div>
+          <p>Use IDs começando com <strong>EMP_</strong> ou <strong>EQ_</strong>.</p>
+        `;
+        return;
+      }
+
+      let url = FIREBASE_URL + path;
+
+      if (FIREBASE_AUTH !== "") {
+        url += `?auth=${FIREBASE_AUTH}`;
+      }
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data) {
+          resultado.innerHTML = `
+            <p class="error">ID não encontrado no banco.</p>
+            <p>ID consultado:</p>
+            <div class="code-box">${escapeHtml(id)}</div>
+          `;
+          return;
+        }
+
+        if (id.startsWith("EMP_")) {
+          mostrarFuncionario(data);
+        } else {
+          mostrarEquipamento(data);
+        }
+      } catch (error) {
+        resultado.innerHTML = `
+          <p class="error">Erro ao consultar Firebase.</p>
+          <p>${escapeHtml(error.message)}</p>
+        `;
+      }
+    }
+
+    function mostrarFuncionario(funcionario) {
+      const resultado = document.getElementById("resultado");
+
+      resultado.innerHTML = `
+        <h3>Funcionário encontrado</h3>
+
+        <div class="item">
+          <span>ID</span>
+          <span>${escapeHtml(funcionario.employee_id || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Nome</span>
+          <span>${escapeHtml(funcionario.name || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Departamento</span>
+          <span>${escapeHtml(funcionario.department || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Cargo</span>
+          <span>${escapeHtml(funcionario.role || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Status</span>
+          <span>
+            <span class="status ${escapeHtml(funcionario.status || "inactive")}">
+              ${escapeHtml(funcionario.status || "-")}
+            </span>
+          </span>
+        </div>
+
+        ${funcionario.photo_url ? `<img src="${escapeAttribute(funcionario.photo_url)}" alt="Foto do funcionário">` : ""}
+      `;
+    }
+
+    function mostrarEquipamento(equipamento) {
+      const resultado = document.getElementById("resultado");
+
+      resultado.innerHTML = `
+        <h3>Equipamento encontrado</h3>
+
+        <div class="item">
+          <span>ID</span>
+          <span>${escapeHtml(equipamento.equipment_id || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Nome</span>
+          <span>${escapeHtml(equipamento.name || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Categoria</span>
+          <span>${escapeHtml(equipamento.category || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Local</span>
+          <span>${escapeHtml(equipamento.location || "-")}</span>
+        </div>
+
+        <div class="item">
+          <span>Status</span>
+          <span>
+            <span class="status ${escapeHtml(equipamento.status || "inactive")}">
+              ${escapeHtml(equipamento.status || "-")}
+            </span>
+          </span>
+        </div>
+
+        <div class="item">
+          <span>Usuário atual</span>
+          <span>${escapeHtml(equipamento.current_holder_name || "Nenhum")}</span>
+        </div>
+
+        ${equipamento.image_url ? `<img src="${escapeAttribute(equipamento.image_url)}" alt="Imagem do equipamento">` : ""}
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+  </script>
+</body>
+</html>
