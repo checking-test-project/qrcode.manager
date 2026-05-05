@@ -908,7 +908,29 @@
     .history-list {
       display: grid;
       gap: 18px;
-      margin-bottom: 28px;
+      margin-bottom: 112px;
+    }
+
+    #screenHistory {
+      padding-bottom: 112px;
+    }
+
+    .floating-footer {
+      position: fixed;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(444px, calc(100vw - 28px));
+      z-index: 50;
+      padding-top: 22px;
+      background: linear-gradient(180deg, rgba(247,249,252,0), rgba(247,249,252,0.96) 42%, #f7f9fc 100%);
+    }
+
+    .floating-footer .btn {
+      min-height: 56px;
+      font-size: 18px;
+      background: white;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
     }
 
     /*
@@ -992,22 +1014,46 @@
     }
 
     .history-card {
-      min-height: 116px;
+      min-height: 126px;
+      width: 100%;
       background: white;
       border: 1px solid rgba(231, 237, 245, 0.9);
       border-radius: 18px;
       box-shadow: var(--shadow-soft);
       padding: 16px;
       display: grid;
-      grid-template-columns: 78px 1fr auto;
+      grid-template-columns: 70px 1fr;
       align-items: center;
       gap: 14px;
       cursor: pointer;
       transition: transform 0.12s ease, box-shadow 0.12s ease;
+      font-family: inherit;
+      text-align: left;
+      color: inherit;
     }
 
     .history-card:active {
       transform: scale(0.985);
+    }
+
+    .history-main {
+      min-width: 0;
+    }
+
+    .history-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .history-actions {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .history-icon {
@@ -1287,7 +1333,9 @@
     <section id="screenHistory" class="screen">
       <div class="history-title"><span data-icon="clock"></span><span>Meu histórico</span></div>
       <div id="historyList" class="history-list"></div>
-      <button class="btn btn-outline" onclick="showScreen('screenHome')"><span data-icon="arrowLeft"></span>Voltar ao início</button>
+      <div class="floating-footer">
+        <button class="btn btn-outline" onclick="showScreen('screenHome')"><span data-icon="arrowLeft"></span>Voltar ao início</button>
+      </div>
     </section>
 
     <!-- DETALHES DO HISTÓRICO -->
@@ -2175,18 +2223,25 @@
       const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
       const photoCount = countOperationPhotos(item);
       const photoText = photoCount === 1 ? "1 foto" : `${photoCount} fotos`;
+      const badgeClass = photoCount > 0 ? "status-pill" : "status-pill orange";
+      const badgeText = photoCount > 0 ? "Ver fotos" : "Sem foto";
 
       return `
-        <div class="history-card">
+        <button class="history-card" type="button" onclick="openHistoryDetail(${index})" aria-label="Abrir fotos e detalhes da operação">
           <div class="history-icon">${icons.calendarClock}</div>
-          <div onclick="openHistoryDetail(${index})">
-            <div class="history-date">${escapeHtml(date)}</div>
+          <div class="history-main">
+            <div class="history-topline">
+              <div class="history-date">${escapeHtml(date)}</div>
+              <span class="${badgeClass}">${escapeHtml(badgeText)}</span>
+            </div>
             <div class="history-op">${escapeHtml(type)}</div>
             <div class="history-equipment">${escapeHtml(equipment)}</div>
-            <div class="history-date" style="margin-top:8px;">${escapeHtml(photoText)}</div>
+            <div class="history-actions">
+              <span class="history-photo-button">Ver detalhes / fotos</span>
+              <span class="history-date">${escapeHtml(photoText)}</span>
+            </div>
           </div>
-          <button class="history-photo-button" type="button" onclick="openHistoryDetail(${index})">Ver fotos</button>
-        </div>
+        </button>
       `;
     }
 
@@ -2351,6 +2406,7 @@
   </script>
 </body>
 </html>
+
 
 
 
