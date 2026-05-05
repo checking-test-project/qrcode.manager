@@ -894,6 +894,86 @@
       margin-bottom: 28px;
     }
 
+    /*
+      Tela de detalhes do histórico.
+      Aqui serão exibidas as fotos anexadas à operação.
+      Ela aceita fotos salvas como URL do Storage e também fotos antigas em Base64.
+    */
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 24px;
+      text-align: left;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 145px 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 17px;
+      line-height: 1.35;
+    }
+
+    .detail-row strong {
+      color: #111827;
+    }
+
+    .detail-row span:last-child {
+      color: #344054;
+      word-break: break-word;
+    }
+
+    .photo-gallery {
+      display: grid;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .photo-gallery-title {
+      font-size: 22px;
+      font-weight: 850;
+      text-align: left;
+      margin-top: 26px;
+      color: #111827;
+    }
+
+    .history-photo {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      background: #f8fafc;
+      overflow: hidden;
+    }
+
+    .history-photo img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      max-height: 520px;
+    }
+
+    .history-photo-caption {
+      padding: 10px 14px;
+      font-size: 15px;
+      color: var(--muted);
+      background: white;
+      border-top: 1px solid var(--line);
+    }
+
+    .empty-photos {
+      padding: 18px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px dashed #c8d1dc;
+      color: var(--muted);
+      font-size: 17px;
+      text-align: center;
+      margin-top: 18px;
+    }
+
     .history-card {
       min-height: 116px;
       background: white;
@@ -905,6 +985,12 @@
       grid-template-columns: 78px 1fr auto;
       align-items: center;
       gap: 14px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .history-card:active {
+      transform: scale(0.985);
     }
 
     .history-icon {
@@ -1186,6 +1272,20 @@
       <div id="historyList" class="history-list"></div>
       <button class="btn btn-outline" onclick="showScreen('screenHome')"><span data-icon="arrowLeft"></span>Voltar ao início</button>
     </section>
+
+    <!-- DETALHES DO HISTÓRICO -->
+    <section id="screenHistoryDetail" class="screen">
+      <div class="card center-card">
+        <div class="icon-badge" data-icon="doc"></div>
+        <h1 class="screen-title small">Detalhes da operação</h1>
+        <div class="accent-line"></div>
+        <div id="historyDetailContent"></div>
+        <div class="btn-stack">
+          <button class="btn btn-outline" onclick="showScreen('screenHistory')"><span data-icon="arrowLeft"></span>Voltar ao histórico</button>
+          <button class="btn btn-primary" onclick="resetFlow()">Nova operação</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -1235,7 +1335,8 @@
         lng: "",
         accuracy: ""
       },
-      operationId: ""
+      operationId: "",
+      historyItems: []
     };
 
     /*
@@ -1842,6 +1943,13 @@
         // Upload das fotos para o Firebase Storage.
         // Retorna um objeto com url e storage_path de cada imagem.
         photosPayload = await window.uploadOperationPhotos(operationId, state.photos);
+
+        // Segurança extra: se por algum motivo o upload retornar Base64,
+        // abortamos para evitar gravar imagem pesada dentro do Realtime Database.
+        const payloadText = JSON.stringify(photosPayload);
+        if (payloadText.includes("data:image/")) {
+          throw new Error("As fotos ainda estão em Base64. O upload para Storage não retornou URLs.");
+        }
       } catch (error) {
         alert("Erro ao enviar fotos para o Firebase Storage: " + error.message);
         submitButton.disabled = false;
@@ -1969,6 +2077,7 @@
         const data = await response.json();
 
         if (!data) {
+          state.historyItems = [];
           historyList.innerHTML = `<div class="loading">Nenhuma operação registrada ainda.</div>`;
           return;
         }
@@ -1976,36 +2085,129 @@
         const items = Object.values(data)
           .filter(item => item && item.operation_id)
           .sort((a, b) => String(b.operation_id).localeCompare(String(a.operation_id)))
-          .slice(0, 10);
+          .slice(0, 20);
+
+        state.historyItems = items;
 
         if (!items.length) {
           historyList.innerHTML = `<div class="loading">Nenhuma operação registrada ainda.</div>`;
           return;
         }
 
-        historyList.innerHTML = items.map(item => historyCard(item)).join("");
+        historyList.innerHTML = items.map((item, index) => historyCard(item, index)).join("");
       } catch (error) {
         historyList.innerHTML = `<div class="loading">Erro ao carregar histórico: ${escapeHtml(error.message)}</div>`;
       }
     }
 
     // Cria um cartão visual do histórico.
-    function historyCard(item) {
+    function historyCard(item, index) {
       const type = operationLabel(item.type);
       const equipment = item.equipment_name || item.equipment_id || "Equipamento";
       const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
+      const photoCount = item.photo_count || countOperationPhotos(item.photos);
 
       return `
-        <div class="history-card">
+        <div class="history-card" onclick="openHistoryDetail(${index})">
           <div class="history-icon">${icons.calendarClock}</div>
           <div>
             <div class="history-date">${escapeHtml(date)}</div>
             <div class="history-op">${escapeHtml(type)}</div>
             <div class="history-equipment">${escapeHtml(equipment)}</div>
+            <div class="history-date" style="margin-top:8px;">${photoCount} foto${photoCount === 1 ? "" : "s"}</div>
           </div>
-          <span class="status-pill">Concluído</span>
+          <span class="status-pill">Ver</span>
         </div>
       `;
+    }
+
+    // Abre uma operação específica do histórico e mostra os detalhes + fotos.
+    function openHistoryDetail(index) {
+      const item = state.historyItems[index];
+      if (!item) return;
+
+      const photos = extractOperationPhotos(item.photos);
+      const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
+
+      document.getElementById("historyDetailContent").innerHTML = `
+        <div class="detail-list">
+          ${detailRow("Registro", item.operation_id || "-")}
+          ${detailRow("Data", date)}
+          ${detailRow("Funcionário", item.employee_name || item.employee_id || "-")}
+          ${detailRow("Equipamento", item.equipment_name || item.equipment_id || "-")}
+          ${detailRow("Operação", operationLabel(item.type))}
+          ${detailRow("GPS", item.gps && item.gps.captured ? "Sim" : "Não")}
+        </div>
+
+        <div class="photo-gallery-title">Fotos anexadas</div>
+        ${photos.length ? renderHistoryPhotos(photos) : `<div class="empty-photos">Nenhuma foto encontrada nesta operação.</div>`}
+      `;
+
+      showScreen("screenHistoryDetail");
+    }
+
+    function detailRow(label, value) {
+      return `
+        <div class="detail-row">
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(value)}</span>
+        </div>
+      `;
+    }
+
+    function renderHistoryPhotos(photos) {
+      return `
+        <div class="photo-gallery">
+          ${photos.map((photo, index) => `
+            <div class="history-photo">
+              <img src="${escapeHtml(photo.url)}" alt="Foto ${index + 1} da operação">
+              <div class="history-photo-caption">Foto ${index + 1}${photo.storage_path ? ` — ${escapeHtml(photo.storage_path)}` : ""}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // Conta fotos em operação nova ou antiga.
+    function countOperationPhotos(photos) {
+      return extractOperationPhotos(photos).length;
+    }
+
+    /*
+      Extrai fotos do histórico aceitando dois formatos:
+      1. Novo/correto: photo_01: { url, storage_path }
+      2. Antigo/Base64: photo_01: "data:image/jpeg;base64,..."
+    */
+    function extractOperationPhotos(photos) {
+      if (!photos) return [];
+
+      return Object.keys(photos)
+        .sort()
+        .map(key => {
+          const item = photos[key];
+
+          if (!item) return null;
+
+          if (typeof item === "string") {
+            if (item.startsWith("data:image/")) {
+              return { url: item, storage_path: "Base64 salvo no Realtime Database" };
+            }
+            if (item.startsWith("http")) {
+              return { url: item, storage_path: "" };
+            }
+            return null;
+          }
+
+          if (typeof item === "object" && item.url) {
+            return {
+              url: item.url,
+              storage_path: item.storage_path || ""
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
     }
 
     // Extrai data/hora a partir do ID LOG_YYYYMMDD_HHMMSS.
@@ -2017,6 +2219,16 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 
