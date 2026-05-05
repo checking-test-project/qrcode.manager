@@ -662,6 +662,23 @@
       color: #c2410c;
     }
 
+    .history-photo-button {
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--blue);
+      background: white;
+      color: var(--blue);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .history-photo-button:active {
+      transform: scale(0.97);
+    }
+
     .notice {
       background: #f6faff;
       border: 1px solid #d8e9ff;
@@ -1410,12 +1427,62 @@
 
     // Converte status internos do banco para texto amigável na interface.
     function normalizeStatus(status) {
-      if (status === "available") return "Disponível";
-      if (status === "borrowed") return "Emprestado";
-      if (status === "maintenance") return "Manutenção";
-      if (status === "active") return "Autorizado";
-      if (status === "inactive") return "Inativo";
+      const code = normalizeStatusCode(status);
+
+      if (code === "available") return "Disponível";
+      if (code === "borrowed") return "Emprestado";
+      if (code === "maintenance") return "Manutenção";
+      if (code === "active") return "Autorizado";
+      if (code === "inactive") return "Inativo";
+
       return status || "-";
+    }
+
+    /*
+      Normaliza os status vindos do Firebase.
+      Isso evita erro quando o banco usa português ou nomes antigos.
+
+      Aceitos como LIVRE:
+      - available
+      - free
+      - livre
+      - disponível / disponivel
+
+      Aceitos como OCUPADO/EMPRESTADO:
+      - borrowed
+      - occupied
+      - ocupado
+      - emprestado
+      - in_use
+    */
+    function normalizeStatusCode(status) {
+      const raw = String(status || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (["available", "free", "livre", "disponivel"].includes(raw)) {
+        return "available";
+      }
+
+      if (["borrowed", "occupied", "ocupado", "emprestado", "in_use", "in use", "in-use"].includes(raw)) {
+        return "borrowed";
+      }
+
+      if (["maintenance", "manutencao", "em manutencao"].includes(raw)) {
+        return "maintenance";
+      }
+
+      if (["active", "ativo", "autorizado", "ok"].includes(raw)) {
+        return "active";
+      }
+
+      if (["inactive", "inativo", "bloqueado", "blocked"].includes(raw)) {
+        return "inactive";
+      }
+
+      return raw;
     }
 
     // Converte o tipo técnico da operação para texto em português.
@@ -1661,6 +1728,7 @@
       const employee = state.employee;
       const equipment = state.equipment;
       const operation = state.operationType;
+      const equipmentStatus = normalizeStatusCode(equipment.status);
 
       document.getElementById("equipmentDetails").innerHTML = `
         ${infoRow("user", "Funcionário", employee.name || employee.employee_id || "-")}
@@ -1676,7 +1744,7 @@
       notice.className = "notice";
 
       if (operation === "checkout") {
-        if (equipment.status !== "available") {
+        if (equipmentStatus !== "available") {
           button.disabled = true;
           notice.className = "notice error";
           notice.innerHTML = `<strong>Retirada bloqueada.</strong><br>Este equipamento não está disponível. Status atual: ${escapeHtml(normalizeStatus(equipment.status))}.`;
@@ -1687,7 +1755,7 @@
       }
 
       if (operation === "checkin") {
-        if (equipment.status !== "borrowed") {
+        if (equipmentStatus !== "borrowed") {
           button.disabled = true;
           notice.className = "notice error";
           notice.innerHTML = `<strong>Devolução bloqueada.</strong><br>Este equipamento não está marcado como emprestado.`;
@@ -2106,17 +2174,18 @@
       const equipment = item.equipment_name || item.equipment_id || "Equipamento";
       const date = operationIdToDate(item.operation_id) || "Data registrada pelo servidor";
       const photoCount = item.photo_count || countOperationPhotos(item.photos);
+      const photoText = photoCount === 1 ? "1 foto" : `${photoCount} fotos`;
 
       return `
-        <div class="history-card" onclick="openHistoryDetail(${index})">
+        <div class="history-card">
           <div class="history-icon">${icons.calendarClock}</div>
-          <div>
+          <div onclick="openHistoryDetail(${index})">
             <div class="history-date">${escapeHtml(date)}</div>
             <div class="history-op">${escapeHtml(type)}</div>
             <div class="history-equipment">${escapeHtml(equipment)}</div>
-            <div class="history-date" style="margin-top:8px;">${photoCount} foto${photoCount === 1 ? "" : "s"}</div>
+            <div class="history-date" style="margin-top:8px;">${escapeHtml(photoText)}</div>
           </div>
-          <span class="status-pill">Ver</span>
+          <button class="history-photo-button" type="button" onclick="openHistoryDetail(${index})">Ver fotos</button>
         </div>
       `;
     }
@@ -2219,6 +2288,7 @@
   </script>
 </body>
 </html>
+
 
 
 
