@@ -1139,6 +1139,7 @@
       <div>
         <div class="brand-title">Controle de Equipamentos</div>
         <div class="brand-subtitle">Check-in e Check-out</div>
+        <div style="margin-top:6px;color:#0b73f6;font-size:12px;font-weight:800;letter-spacing:.02em;">VERSÃO FOTOS v2.1</div>
       </div>
     </header>
 
@@ -1331,7 +1332,7 @@
 
     <!-- HISTÓRICO -->
     <section id="screenHistory" class="screen">
-      <div class="history-title"><span data-icon="clock"></span><span>Meu histórico</span></div>
+      <div class="history-title"><span data-icon="clock"></span><span>Meu histórico e fotos</span></div>
       <div id="historyList" class="history-list"></div>
       <div class="floating-footer">
         <button class="btn btn-outline" onclick="showScreen('screenHome')"><span data-icon="arrowLeft"></span>Voltar ao início</button>
@@ -2227,7 +2228,7 @@
       const badgeText = photoCount > 0 ? "Ver fotos" : "Sem foto";
 
       return `
-        <button class="history-card" type="button" onclick="openHistoryDetail(${index})" aria-label="Abrir fotos e detalhes da operação">
+        <button class="history-card" type="button" onclick="openHistoryDetail(${index})" aria-label="Abrir detalhes e fotos desta operação">
           <div class="history-icon">${icons.calendarClock}</div>
           <div class="history-main">
             <div class="history-topline">
@@ -2237,7 +2238,7 @@
             <div class="history-op">${escapeHtml(type)}</div>
             <div class="history-equipment">${escapeHtml(equipment)}</div>
             <div class="history-actions">
-              <span class="history-photo-button">Ver detalhes / fotos</span>
+              <span class="history-photo-button">Abrir operação</span>
               <span class="history-date">${escapeHtml(photoText)}</span>
             </div>
           </div>
@@ -2406,6 +2407,7 @@
   </script>
 </body>
 </html>
+
 
 
 
